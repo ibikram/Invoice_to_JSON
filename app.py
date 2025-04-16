@@ -3,26 +3,24 @@ import requests
 import json
 import os
 import uuid
-import secrets
-import pdb
+from dotenv import load_dotenv
+load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = secrets.token_hex(16)
 
 # API configuration
-API_URL = "https://invoice-7-invoice-ai.adamastech.org/v1"
-API_KEY = "JXfbsb7euy8pqqQJJiIBg8DpS4AiaIek6A9u1RLE"
+API_URL = os.getenv('API_URL')
+API_KEY = os.getenv('API_KEY')
 
 # In-memory store for uploaded job data
 job_data_store = {}
 
 @app.route('/')
 def index():
-    return render_template('new_index.html')
+    return render_template('index.html')
 
 @app.route('/upload', methods=['POST'])
 def upload_files():
-    pdb.set_trace
     if 'files' not in request.files:
         return jsonify({'error': 'No files part in the request'}), 400
 
@@ -113,12 +111,11 @@ def get_result():
         result_data = result_response.json()
         print("result_data")
         print(result_data)  # Optional: see the full response
-        print(result_data.get('data', []))
-        print("Condition check....")
-        print(all('json_response' in item for item in result_data.get('data', [])))
+        print("Status code:", result_data.get('statusCode'))
+        print("Data list:", result_data.get('data'))
         
         # If all responses are ready
-        if all('json_response' in item for item in result_data.get('data', [])):
+        if int(result_data.get('statusCode')) == 200:
             
             print('if triggered')
             return jsonify({
@@ -133,4 +130,4 @@ def get_result():
         return jsonify({'error': f'Failed to fetch results: {str(e)}'}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(host='127.0.0.1', debug=False, port=5000)

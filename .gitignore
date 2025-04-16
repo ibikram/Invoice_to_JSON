@@ -1,4 +1,7 @@
 venv_aws_doc/
-templates/index.html
+venv/
 show-results.py
 upload_to_s3.py
+.env
+logs/
+__pycache__/
