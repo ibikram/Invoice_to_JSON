@@ -1,0 +1,4 @@
+venv_aws_doc/
+templates/index.html
+show-results.py
+upload_to_s3.py

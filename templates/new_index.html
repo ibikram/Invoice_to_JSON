@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Invoice Processor</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <style>
+        .file-item {
+            margin-bottom: 5px;
+            padding: 8px;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+        }
+        .processing-spinner {
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+        .result-card {
+            margin-top: 20px;
+            border-left: 4px solid #0d6efd;
+        }
+        .file-drop-area {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 25px;
+            text-align: center;
+            background-color: #f8f9fa;
+            transition: all 0.3s;
+        }
+        .file-drop-area.highlight {
+            border-color: #0d6efd;
+            background-color: #e9ecef;
+        }
+        #uploadProgress {
+            display: none;
+        }
+        .success-icon {
+            color: #198754;
+        }
+        .error-icon {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-md-8 mx-auto">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h2 class="card-title text-center mb-4">PDF Invoice Processor</h2>
+                        
+                        <!-- File Upload Section -->
+                        <div class="file-drop-area mb-3" id="dropArea">
+                            <div>
+                                <i class="bi bi-cloud-arrow-up fs-1"></i>
+                                <p>Drag & drop PDF files here or click to browse</p>
+                                <input type="file" id="fileInput" multiple accept=".pdf" class="d-none">
+                                <button class="btn btn-primary" id="browseButton">Browse Files</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Selected Files List -->
+                        <div id="fileList" class="mb-3"></div>
+                        
+                        <!-- Upload Button -->
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-success" id="uploadButton" disabled>
+                                Upload Files
+                            </button>
+                        </div>
+                        
+                        <!-- Progress Bar -->
+                        <div class="mt-3" id="uploadProgress">
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                     role="progressbar" style="width: 100%"></div>
+                            </div>
+                            <p class="text-center mt-2" id="statusMessage">Processing...</p>
+                        </div>
+                        
+                        <!-- Job ID Display -->
+                        <div class="alert alert-info mt-3" id="jobIdContainer" style="display: none">
+                            <strong>Job ID:</strong> <span id="jobId"></span>
+                            <button class="btn btn-sm btn-outline-primary float-end" id="copyJobId">Copy</button>
+                        </div>
+                        
+                        <!-- Results Section -->
+                        <div id="resultsContainer" class="mt-4" style="display: none">
+                            <h4 class="border-bottom pb-2">Results</h4>
+                            <div id="resultsContent"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+
+    <script>
+        $(document).ready(function() {
+            // Variables
+            let selectedFiles = [];
+            let currentJobId = null;
+            let pollingInterval = false;
+            
+            // Connect file input to browse button
+            $("#browseButton").click(function() {
+                $("#fileInput").click();
+            });
+            
+            // Handle file selection
+            $("#fileInput").change(function(e) {
+                handleFiles(e.target.files);
+            });
+            
+            // Drag and drop functionality
+            const dropArea = document.getElementById('dropArea');
+            
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+            
+            function highlight() {
+                dropArea.classList.add('highlight');
+            }
+            
+            function unhighlight() {
+                dropArea.classList.remove('highlight');
+            }
+            
+            dropArea.addEventListener('drop', function(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                handleFiles(files);
+            }, false);
+            
+            // Process selected files
+            function handleFiles(files) {
+                const pdfFiles = Array.from(files).filter(file => file.type === 'application/pdf');
+                
+                if (pdfFiles.length === 0) {
+                    alert("Please select PDF files only.");
+                    return;
+                }
+                
+                selectedFiles = pdfFiles;
+                updateFileList();
+                $("#uploadButton").prop("disabled", selectedFiles.length === 0);
+            }
+            
+            // Update file list display
+            function updateFileList() {
+                const fileList = $("#fileList");
+                fileList.empty();
+                
+                if (selectedFiles.length === 0) {
+                    fileList.html("<p class='text-muted'>No files selected</p>");
+                    return;
+                }
+                
+                selectedFiles.forEach((file, index) => {
+                    const fileSize = formatFileSize(file.size);
+                    const fileItem = $(`
+                        <div class="file-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>${file.name}</strong> (${fileSize})
+                            </div>
+                            <button class="btn btn-sm btn-outline-danger remove-file" data-index="${index}">
+                                &times;
+                            </button>
+                        </div>
+                    `);
+                    fileList.append(fileItem);
+                });
+                
+                // Add event listeners for remove buttons
+                $(".remove-file").click(function() {
+                    const index = $(this).data("index");
+                    selectedFiles.splice(index, 1);
+                    updateFileList();
+                    $("#uploadButton").prop("disabled", selectedFiles.length === 0);
+                });
+            }
+            
+            // Format file size
+            function formatFileSize(bytes) {
+                if (bytes < 1024) return bytes + " bytes";
+                else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
+                else return (bytes / 1048576).toFixed(1) + " MB";
+            }
+            
+            // Handle file upload
+            $("#uploadButton").click(function() {
+                if (selectedFiles.length === 0) return;
+                
+                // Create form data
+                const formData = new FormData();
+                selectedFiles.forEach(file => {
+                    formData.append("files", file);
+                });
+                
+                // Show progress
+                $("#uploadProgress").show();
+                $("#statusMessage").text("Uploading files...");
+                $("#uploadButton").prop("disabled", true);
+                
+                // Make AJAX request
+                $.ajax({
+                    url: "/upload",
+                    type: "POST",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        // Show job ID
+                        // debugger
+                        $("#jobId").text(response['payload']);
+                        $("#jobIdContainer").show();
+                        
+                        // Show upload results
+                        $("#statusMessage").text("Files uploaded successfully. Processing...");
+                        console.log('startPolling')
+                        // Start polling for results
+                        startPolling(response['payload']);
+                    },
+                    error: function(xhr, status, error) {
+                        $("#statusMessage").text("Error: " + (xhr.responseJSON?.error || error));
+                        $("#uploadProgress .progress-bar").addClass("bg-danger");
+                    }
+                });
+            });
+            
+            // Copy job ID to clipboard
+            $("#copyJobId").click(function() {
+                const jobId = $("#jobId").text();
+                navigator.clipboard.writeText(jobId).then(function() {
+                    const originalText = $("#copyJobId").text();
+                    $("#copyJobId").text("Copied!");
+                    setTimeout(function() {
+                        $("#copyJobId").text(originalText);
+                    }, 2000);
+                });
+            });
+
+            // Poll for results
+             
+            function startPolling(payload) {
+                if (pollingInterval==false) {
+                    console.log("No results yet!")
+                    clearInterval(pollingInterval)
+                };
+                
+                pollingInterval = setInterval(function() {
+                    console.log("Polling for payload:",payload);
+                    checkResults(payload);
+                }, 3000); // Poll every 3 seconds
+            }
+            
+            // Check for results
+            function checkResults(payload) {
+                // Create form data
+                const formData = new FormData();
+                selectedFiles.forEach(file => {
+                    formData.append("payload", payload);
+                });
+                
+                // Make AJAX request
+                $.ajax({
+                    url: "/result",
+                    type: "POST",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        if (response.status_code != 200) {
+                            // Still processing, continue polling
+                            return false;
+                        }
+                        console.log("Ajax response...")
+                        console.log(response)
+                        // Results are ready
+                        clearInterval(pollingInterval);
+                        $("#statusMessage").text("Processing complete!");
+                        $("#uploadProgress .progress-bar").removeClass("progress-bar-animated").addClass("bg-success");
+                        
+                        // Display results
+                        console.log("Raw result:", response.raw_result);
+                        displayResults(response.raw_result);
+                        return true
+                    },
+                    error: function(xhr, status, error) {
+                        $("#statusMessage").text("Error retrieving results: " + (xhr.responseJSON?.error || error));
+                        $("#uploadProgress .progress-bar").addClass("bg-danger");
+                        clearInterval(pollingInterval);
+                    }
+                });
+            }
+            
+            // Display results
+            function displayResults(results) {
+                const resultsContainer = $("#resultsContainer");
+                const resultsContent = $("#resultsContent");
+                resultsContent.empty();
+                
+                if (!results || !results.data || results.data.length === 0) {
+                    resultsContent.html("<p class='text-muted'>No results available</p>");
+                    resultsContainer.show();
+                    return;
+                }
+                
+                results.data.forEach(item => {
+                    if (!item.json_response) return;
+                    
+                    try {
+                        const response = typeof item.json_response === 'string' 
+                            ? JSON.parse(item.json_response) 
+                            : item.json_response;
+                        
+                        const resultCard = $(`
+                            <div class="card result-card mb-3">
+                                <div class="card-header bg-light">
+                                    <strong>File:</strong> ${item.filename || 'Unknown file'}
+                                </div>
+                                <div class="card-body">
+                                    <pre class="result-json">${JSON.stringify(response, null, 2)}</pre>
+                                </div>
+                            </div>
+                        `);
+                        
+                        resultsContent.append(resultCard);
+                    } catch (error) {
+                        console.error("Error parsing JSON response:", error);
+                        resultsContent.append(`
+                            <div class="alert alert-warning">
+                                Error parsing results for ${item.filename || 'Unknown file'}
+                            </div>
+                        `);
+                    }
+                });
+                
+                resultsContainer.show();
+                
+                // Reset the form
+                $("#uploadButton").prop("disabled", false);
+            }
+            
+            // Initialize the page
+            updateFileList();
+        });
+    </script>
+</body>
+</html>
