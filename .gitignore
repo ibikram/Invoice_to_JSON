@@ -5,3 +5,7 @@ upload_to_s3.py
 
 requirements.txt
 venv
+
+__pycache__/
+logs/
+.env
