@@ -41,11 +41,15 @@ def upload_files():
 
     try:
         response = requests.post(url, headers=headers, data=payload)
-        response.raise_for_status()
     except requests.exceptions.RequestException as e:
         return jsonify({'error': f'Failed to get presigned URLs: {str(e)}'}), 500
 
     response_data = response.json()
+    if response_data["statusCode"] != 200:
+        return jsonify({
+        'success': False,
+        'msg': response_data["error"]
+    })
     print(json.dumps(response_data, indent=2))
 
     upload_results = []
@@ -96,6 +100,36 @@ def upload_files():
         'payload': payload
     })
 
+def compact_inner_dicts(obj):
+    import re
+    raw = json.dumps(obj, indent=2)
+
+    # Regex to collapse inner dictionaries of format:
+    # {
+    #   "value": "...",
+    #   "conf": ...
+    # }
+    # into: { "value": "...", "conf": ... }
+    compacted = re.sub(r'\{\n\s+"value": (.*?),\n\s+"conf": (.*?)\n\s+\}', r'{ "value": \1, "conf": \2 }', raw)
+
+    return compacted
+
+import json
+
+def simplify_value_conf(obj):
+    if isinstance(obj, dict):
+        # If it's a simple {"value": ..., "conf": ...}, return just the value
+        if set(obj.keys()) == {"value", "conf"}:
+            return obj["value"]
+        else:
+            return {k: simplify_value_conf(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [simplify_value_conf(item) for item in obj]
+    else:
+        return obj
+
+
+
 @app.route('/result', methods=['POST'])
 def get_result():
     payload =  request.form.get("payload")
@@ -109,22 +143,16 @@ def get_result():
         result_response = requests.post(f"{API_URL}/show-result", headers=headers, data=payload)
         result_response.raise_for_status()
         result_data = result_response.json()
-        print("result_data")
-        print(result_data)  # Optional: see the full response
-        print("Status code:", result_data.get('statusCode'))
-        print("Data list:", result_data.get('data'))
-        
-        # If all responses are ready
-        if int(result_data.get('statusCode')) == 200:
-            
-            print('if triggered')
-            return jsonify({
-                "status_code": 200,
-                "raw_result": result_data
-            })
-        else:
-            print('else triggered')
-            return jsonify({'status': 'processing'}), 202
+        print("="*10)
+        print(result_data)
+        try:
+            json_str = result_data['data'][0]['json_response']
+            json_obj = simplify_value_conf(json.loads(json_str))
+            compact_json = compact_inner_dicts(json_obj)
+            result_data['data'][0]['json_response'] = compact_json
+        except:pass
+
+        return jsonify(result_data)
 
     except requests.exceptions.RequestException as e:
         return jsonify({'error': f'Failed to fetch results: {str(e)}'}), 500

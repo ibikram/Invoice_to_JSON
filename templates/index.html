@@ -230,6 +230,13 @@
                     success: function(response) {
                         // Show job ID
                         // debugger
+                        if (!response.success){
+                            alert(response.msg)
+                            resultsContainer.show();
+                            $("#uploadButton").prop("disabled", false);
+                            return
+
+                        }
                         $("#jobId").text(response['payload']);
                         $("#jobIdContainer").show();
                         
@@ -261,6 +268,7 @@
             // Poll for results
              
             function startPolling(payload) {
+                checkResults(payload)
                 if (pollingInterval==false) {
                     console.log("No results yet!")
                     clearInterval(pollingInterval)
@@ -288,7 +296,7 @@
                     processData: false,
                     contentType: false,
                     success: function(response) {
-                        if (response.status_code != 200) {
+                        if (response.statusCode != 200) {
                             // Still processing, continue polling
                             return false;
                         }
@@ -300,8 +308,8 @@
                         $("#uploadProgress .progress-bar").removeClass("progress-bar-animated").addClass("bg-success");
                         
                         // Display results
-                        console.log("Raw result:", response.raw_result);
-                        displayResults(response.raw_result);
+                        console.log("Response:", response);
+                        displayResults(response);
                         return true
                     },
                     error: function(xhr, status, error) {
@@ -317,32 +325,38 @@
                 const resultsContainer = $("#resultsContainer");
                 const resultsContent = $("#resultsContent");
                 resultsContent.empty();
-                
+
                 if (!results || !results.data || results.data.length === 0) {
                     resultsContent.html("<p class='text-muted'>No results available</p>");
                     resultsContainer.show();
                     return;
                 }
-                
+
                 results.data.forEach(item => {
                     if (!item.json_response) return;
-                    
+
                     try {
-                        const response = typeof item.json_response === 'string' 
-                            ? JSON.parse(item.json_response) 
+                        const parsed = typeof item.json_response === 'string'
+                            ? JSON.parse(item.json_response)
                             : item.json_response;
-                        
+
+                        // Compact nested { value, conf } blocks into one-liners in the stringified JSON
+                        const prettyPrinted = JSON.stringify(parsed, null, 2).replace(
+                            /{\s+"value":\s*(.*?),\s+"conf":\s*(.*?)\s*}/g,
+                            (match, value, conf) => `{ "value": ${value}, "conf": ${conf} }`
+                        );
+
                         const resultCard = $(`
                             <div class="card result-card mb-3">
                                 <div class="card-header bg-light">
                                     <strong>File:</strong> ${item.filename || 'Unknown file'}
                                 </div>
                                 <div class="card-body">
-                                    <pre class="result-json">${JSON.stringify(response, null, 2)}</pre>
+                                    <pre class="result-json">${prettyPrinted}</pre>
                                 </div>
                             </div>
                         `);
-                        
+
                         resultsContent.append(resultCard);
                     } catch (error) {
                         console.error("Error parsing JSON response:", error);
@@ -353,13 +367,11 @@
                         `);
                     }
                 });
-                
+
                 resultsContainer.show();
-                
-                // Reset the form
                 $("#uploadButton").prop("disabled", false);
             }
-            
+
             // Initialize the page
             updateFileList();
         });
