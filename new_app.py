@@ -147,10 +147,11 @@ def get_result():
         print("="*10)
         print(result_data)
         try:
-            json_str = result_data['data'][0]['json_response']
-            json_obj = simplify_value_conf(json.loads(json_str))
-            compact_json = compact_inner_dicts(json_obj)
-            result_data['data'][0]['json_response'] = compact_json
+            for idx in range(len(result_data['data'])):
+                json_str = result_data['data'][idx]['json_response']
+                json_obj = simplify_value_conf(json.loads(json_str))
+                compact_json = compact_inner_dicts(json_obj)
+                result_data['data'][idx]['json_response'] = compact_json
         except:pass
 
         return jsonify(result_data)
