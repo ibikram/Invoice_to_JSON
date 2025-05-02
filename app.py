@@ -150,7 +150,7 @@ def get_result():
                 json_str = result_data['data'][idx]['json_response']
                 json_obj = simplify_value_conf(json.loads(json_str))
                 compact_json = compact_inner_dicts(json_obj)
-                result_data['data'][idx]['json_response'] = compact_json
+                result_data['data'][idx]['json_response'] = json_str
         except:pass
 
         return jsonify(result_data)
