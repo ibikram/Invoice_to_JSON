@@ -10,8 +10,8 @@ app = Flask(__name__)
 app.secret_key = secrets.token_hex(16)
 
 # API configuration
-API_URL = "https://invoice-7-invoice-ai.adamastech.org/v1"
-API_KEY = "JXfbsb7euy8pqqQJJiIBg8DpS4AiaIek6A9u1RLE"
+API_URL = "https://invoice-10-invoice-ai.adamastech.org/v1"
+API_KEY = "I1ZLeiV1ZdXvsp9pzDVA2iOnsfdTrjG9wcR5dP4f"
 
 # In-memory store for uploaded job data
 job_data_store = {}
@@ -151,7 +151,7 @@ def get_result():
                 json_str = result_data['data'][idx]['json_response']
                 json_obj = simplify_value_conf(json.loads(json_str))
                 compact_json = compact_inner_dicts(json_obj)
-                result_data['data'][idx]['json_response'] = compact_json
+                result_data['data'][idx]['json_response'] = json_str
         except:pass
 
         return jsonify(result_data)

@@ -298,6 +298,8 @@
                     success: function(response) {
                         if (response.statusCode != 200) {
                             // Still processing, continue polling
+                            $("#statusMessage").text(response.message);
+
                             return false;
                         }
                         console.log("Ajax response...")
