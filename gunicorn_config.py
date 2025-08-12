@@ -8,6 +8,7 @@ if not os.path.exists(logs_folder):
 # Gunicorn configuration
 bind = "0.0.0.0:8000"
 workers = 2
+threads = 2
 timeout = 600
 accesslog = os.path.join(logs_folder, 'access.log')
 errorlog = os.path.join(logs_folder, 'error.log')

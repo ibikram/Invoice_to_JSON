@@ -159,4 +159,4 @@ def get_result():
         return jsonify({'error': f'Failed to fetch results: {str(e)}'}), 500
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', debug=False, port=5000)
+    app.run(host='127.0.0.1', debug=False, port=8000)
