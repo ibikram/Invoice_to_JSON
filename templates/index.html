@@ -334,6 +334,51 @@
                     return;
                 }
 
+                const confidenceThreshold = 0.97; // Threshold for yellow color
+                const errorThreshold = 0.9; // Threshold for red color
+
+                // Recursive JSON → HTML converter
+                function jsonToHtml(obj, indent = 0) {
+                    const pad = " ".repeat(indent * 4); // spaces for indentation
+                    let html = "";
+
+                    if (Array.isArray(obj)) {
+                        html += "[\n";
+                        obj.forEach((item, idx) => {
+                            html += pad + "    " + jsonToHtml(item, indent + 1) + (idx < obj.length - 1 ? "," : "") + "\n";
+                        });
+                        html += pad + "]";
+                    } 
+                    else if (typeof obj === 'object' && obj !== null) {
+                        html += "{\n";
+                        const keys = Object.keys(obj);
+                        keys.forEach((key, idx) => {
+                            let displayKey = key;
+                            const value = obj[key];
+
+                            // Check confidence value
+                            if (value && value.value && Array.isArray(value.value)) {
+                                let conf = parseFloat(value.value[1]);
+                                if (!isNaN(conf) && conf < confidenceThreshold && conf > errorThreshold) {
+                                    displayKey = `<span style="color:yellow">${key}</span>`;
+                                }
+                                else if (!isNaN(conf) && conf < errorThreshold && conf > 0) {
+                                    displayKey = `<span style="color:red">${key}</span>`;
+                                }
+                            }
+
+                            html += pad + "    \"" + displayKey + "\": " + jsonToHtml(value, indent + 1);
+                            if (idx < keys.length - 1) html += ",";
+                            html += "\n";
+                        });
+                        html += pad + "}";
+                    } 
+                    else {
+                        html += JSON.stringify(obj);
+                    }
+                    return html;
+                }
+
                 results.data.forEach(item => {
                     if (!item.json_response) return;
 
@@ -342,11 +387,7 @@
                             ? JSON.parse(item.json_response)
                             : item.json_response;
 
-                        // Compact nested { value, conf } blocks into one-liners in the stringified JSON
-                        const prettyPrinted = JSON.stringify(parsed, null, 2).replace(
-                            /{\s+"value":\s*(.*?),\s+"conf":\s*(.*?)\s*}/g,
-                            (match, value, conf) => `{ "value": ${value}, "conf": ${conf} }`
-                        );
+                        const prettyHtml = jsonToHtml(parsed);
 
                         const resultCard = $(`
                             <div class="card result-card mb-3">
@@ -354,7 +395,7 @@
                                     <strong>File:</strong> ${item.filename || 'Unknown file'}
                                 </div>
                                 <div class="card-body">
-                                    <pre class="result-json">${prettyPrinted}</pre>
+                                    <div class="result-json" style="white-space: pre; font-family: monospace;">${prettyHtml}</div>
                                 </div>
                             </div>
                         `);
