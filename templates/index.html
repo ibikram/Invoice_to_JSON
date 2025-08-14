@@ -360,7 +360,7 @@
                             if (value && value.value && Array.isArray(value.value)) {
                                 let conf = parseFloat(value.value[1]);
                                 if (!isNaN(conf) && conf < confidenceThreshold && conf > errorThreshold) {
-                                    displayKey = `<span style="color:yellow">${key}</span>`;
+                                    displayKey = `<span style="color:orange">${key}</span>`;
                                 }
                                 else if (!isNaN(conf) && conf < errorThreshold && conf > 0) {
                                     displayKey = `<span style="color:red">${key}</span>`;
