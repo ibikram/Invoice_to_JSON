@@ -5,13 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PDF Invoice Processor</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <style>
+        :root {
+            --bg: #ffffff;
+            --card-bg: #ffffff;
+            --text: #212529;
+            --muted: #6c757d;
+            --border: #dee2e6;
+            --primary: #0d6efd;
+            --accent: #7952b3;
+        }
+        .theme-dark {
+            --bg: #0f1115;
+            --card-bg: #141820;
+            --text: #e6e6e6;
+            --muted: #a0a4ad;
+            --border: #2a2f3a;
+            --primary: #4da3ff;
+            --accent: #9b7bff;
+        }
+        body {
+            background: var(--bg);
+            color: var(--text);
+        }
+        .navbar-custom {
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+        }
         .file-item {
             margin-bottom: 5px;
             padding: 8px;
             border-radius: 4px;
-            background-color: #f8f9fa;
+            background-color: var(--card-bg);
+            border: 1px dashed var(--border);
         }
         .processing-spinner {
             width: 1.5rem;
@@ -19,19 +47,22 @@
         }
         .result-card {
             margin-top: 20px;
-            border-left: 4px solid #0d6efd;
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--primary);
+            background: var(--card-bg);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
         .file-drop-area {
             border: 2px dashed #ccc;
             border-radius: 8px;
             padding: 25px;
             text-align: center;
-            background-color: #f8f9fa;
+            background-color: var(--card-bg);
             transition: all 0.3s;
         }
         .file-drop-area.highlight {
             border-color: #0d6efd;
-            background-color: #e9ecef;
+            background-color: rgba(13,110,253,0.05);
         }
         #uploadProgress {
             display: none;
@@ -42,10 +73,33 @@
         .error-icon {
             color: #dc3545;
         }
+        .toolbar .btn, .toolbar .form-select {
+            transition: transform 0.1s ease;
+        }
+        .toolbar .btn:active { transform: scale(0.98); }
+        .legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        .legend .low { background: red; }
+        .legend .med { background: orange; }
+        .legend .ok { background: #198754; }
+        .card-header { position: sticky; top: 0; z-index: 1; }
+        .collapse-toggle { cursor: pointer; }
     </style>
 </head>
 <body>
-    <div class="" style="margin-top: 60px; margin-left: 60px;">
+    <!-- Top Navbar -->
+    <nav class="navbar navbar-custom fixed-top">
+        <div class="container-fluid px-3">
+            <span class="navbar-brand mb-0 h5 d-flex align-items-center gap-2">
+                <i class="bi bi-receipt"></i> Invoice Processor
+            </span>
+            <div class="d-flex align-items-center gap-2">
+                <button id="toggleTheme" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-moon-stars me-1"></i><span class="theme-label">Dark</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+    <div class="container" style="margin-top: 80px;">
         <div class="row">
             <div class="col-md-8">
                 <div class="card shadow-sm">
@@ -89,7 +143,29 @@
                         
                         <!-- Results Section -->
                         <div id="resultsContainer" class="mt-4" style="display: none">
-                            <h4 class="border-bottom pb-2">Results</h4>
+                            <div class="d-flex align-items-center justify-content-between border-bottom pb-2 toolbar">
+                                <div class="d-flex align-items-center gap-2">
+                                    <h4 class="m-0">Results</h4>
+                                    <div class="legend ms-3 small text-muted">
+                                        <span class="legend-dot low"></span><span class="me-3">conf < 0.9</span>
+                                        <span class="legend-dot med"></span><span class="me-3">0.9 ≤ conf < 0.97</span>
+                                        <span class="legend-dot ok"></span><span>conf ≥ 0.97</span>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="d-flex align-items-center gap-2 me-2">
+                                        <label for="viewMode" class="form-label m-0 me-1">View</label>
+                                        <select id="viewMode" class="form-select form-select-sm" style="width: auto;">
+                                            <option value="values" selected>Values only</option>
+                                            <option value="values_conf">Values + confidence</option>
+                                        </select>
+                                    </div>
+                                    <button id="expandAll" class="btn btn-sm btn-outline-secondary" title="Expand all"><i class="bi bi-arrows-expand"></i></button>
+                                    <button id="collapseAll" class="btn btn-sm btn-outline-secondary" title="Collapse all"><i class="bi bi-arrows-collapse"></i></button>
+                                    <button id="copyAll" class="btn btn-sm btn-outline-secondary" title="Copy all JSON"><i class="bi bi-clipboard"></i></button>
+                                    <button id="downloadAll" class="btn btn-sm btn-primary" title="Download all JSON"><i class="bi bi-download me-1"></i>Download</button>
+                                </div>
+                            </div>
                             <div id="resultsContent"></div>
                         </div>
                     </div>
@@ -105,6 +181,29 @@
             let selectedFiles = [];
             let currentJobId = null;
             let pollingInterval = false;
+            let showConfidence = false; // controls value-only vs value+confidence view
+            let lastResults = null;     // cache last results to re-render on toggle
+            window.LOCAL_FILE_URLS = {}; // filename -> object URL for locally selected files
+            
+            // Theme init
+            function applyTheme(mode) {
+                if (mode === 'dark') {
+                    $('body').addClass('theme-dark');
+                    $('.theme-label').text('Light');
+                    $('#toggleTheme i').removeClass('bi-moon-stars').addClass('bi-sun');
+                } else {
+                    $('body').removeClass('theme-dark');
+                    $('.theme-label').text('Dark');
+                    $('#toggleTheme i').removeClass('bi-sun').addClass('bi-moon-stars');
+                }
+            }
+            let savedTheme = localStorage.getItem('theme') || 'light';
+            applyTheme(savedTheme);
+            $('#toggleTheme').on('click', function() {
+                savedTheme = (savedTheme === 'light') ? 'dark' : 'light';
+                localStorage.setItem('theme', savedTheme);
+                applyTheme(savedTheme);
+            });
             
             // Connect file input to browse button
             $("#browseButton").click(function() {
@@ -159,10 +258,27 @@
                     return;
                 }
                 
+                // Revoke any previous object URLs
+                try {
+                    Object.values(window.LOCAL_FILE_URLS || {}).forEach(url => URL.revokeObjectURL(url));
+                } catch (e) {}
+                window.LOCAL_FILE_URLS = {};
+
+                // Create object URLs for local preview/open
+                pdfFiles.forEach(f => {
+                    try { window.LOCAL_FILE_URLS[f.name] = URL.createObjectURL(f); } catch (e) {}
+                });
+
                 selectedFiles = pdfFiles;
                 updateFileList();
                 $("#uploadButton").prop("disabled", selectedFiles.length === 0);
             }
+            // Revoke object URLs on unload
+            window.addEventListener('beforeunload', () => {
+                try {
+                    Object.values(window.LOCAL_FILE_URLS || {}).forEach(url => URL.revokeObjectURL(url));
+                } catch (e) {}
+            });
             
             // Update file list display
             function updateFileList() {
@@ -237,7 +353,7 @@
                             return
 
                         }
-                        $("#jobId").text(response['payload']);
+                        $("#jobId").text(response['job_id'] || response['payload'] || '');
                         $("#jobIdContainer").show();
                         
                         // Show upload results
@@ -268,14 +384,9 @@
             // Poll for results
              
             function startPolling(payload) {
-                checkResults(payload)
-                if (pollingInterval==false) {
-                    console.log("No results yet!")
-                    clearInterval(pollingInterval)
-                };
-                
+                if (pollingInterval) clearInterval(pollingInterval);
+                checkResults(payload);
                 pollingInterval = setInterval(function() {
-                    console.log("Polling for payload:",payload);
                     checkResults(payload);
                 }, 3000); // Poll every 3 seconds
             }
@@ -284,9 +395,7 @@
             function checkResults(payload) {
                 // Create form data
                 const formData = new FormData();
-                selectedFiles.forEach(file => {
-                    formData.append("payload", payload);
-                });
+                formData.append("payload", payload);
                 
                 // Make AJAX request
                 $.ajax({
@@ -311,7 +420,8 @@
                         
                         // Display results
                         console.log("Response:", response);
-                        displayResults(response);
+                        lastResults = response;
+                        displayResultsForm(response);
                         return true
                     },
                     error: function(xhr, status, error) {
@@ -399,6 +509,341 @@
                                 </div>
                             </div>
                         `);
+
+                        resultsContent.append(resultCard);
+                    } catch (error) {
+                        console.error("Error parsing JSON response:", error);
+                        resultsContent.append(`
+                            <div class="alert alert-warning">
+                                Error parsing results for ${item.filename || 'Unknown file'}
+                            </div>
+                        `);
+                    }
+                });
+
+                resultsContainer.show();
+                $("#uploadButton").prop("disabled", false);
+            }
+
+            // View mode toggle
+            $(document).on('change', '#viewMode', function() {
+                const mode = $(this).val();
+                showConfidence = (mode === 'values_conf');
+                if (lastResults) {
+                    displayResultsForm(lastResults);
+                }
+            });
+
+            // Expand/Collapse All
+            $(document).on('click', '#expandAll', function() {
+                $('.result-card .card-body').removeClass('d-none');
+                $('.result-card .toggle-card i').removeClass('bi-chevron-down').addClass('bi-chevron-up');
+            });
+            $(document).on('click', '#collapseAll', function() {
+                $('.result-card .card-body').addClass('d-none');
+                $('.result-card .toggle-card i').removeClass('bi-chevron-up').addClass('bi-chevron-down');
+            });
+
+            // Copy/Download All
+            function collectAllEdited() {
+                const all = {};
+                $('#resultsContent .result-card').each(function() {
+                    const card = $(this);
+                    const fname = card.data('filename') || 'result';
+                    const edited = collectEditedJson(card.find('.card-body'));
+                    all[fname] = edited;
+                });
+                return all;
+            }
+            $(document).on('click', '#copyAll', function() {
+                const all = collectAllEdited();
+                const text = JSON.stringify(all, null, 2);
+                navigator.clipboard.writeText(text).then(() => {
+                    const btn = $(this);
+                    const original = btn.html();
+                    btn.html('<i class="bi bi-clipboard-check"></i>');
+                    setTimeout(() => btn.html(original), 1200);
+                });
+            });
+            $(document).on('click', '#downloadAll', function() {
+                const all = collectAllEdited();
+                const blob = new Blob([JSON.stringify(all, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'results.json';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+            });
+
+            // New: Display results as editable input fields with copy/download
+            function displayResultsForm(results) {
+                const resultsContainer = $("#resultsContainer");
+                const resultsContent = $("#resultsContent");
+                resultsContent.empty();
+
+                if (!results || !results.data || results.data.length === 0) {
+                    resultsContent.html("<p class='text-muted'>No results available</p>");
+                    resultsContainer.show();
+                    return;
+                }
+
+                function escapeHtml(str) {
+                    return String(str)
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/\"/g, '&quot;')
+                        .replace(/'/g, '&#039;');
+                }
+
+                function parseConfidence(confRaw) {
+                    if (confRaw === undefined || confRaw === null) return null;
+                    if (typeof confRaw === 'number') return confRaw === 0 ? null : confRaw;
+                    const s = String(confRaw).trim().toUpperCase();
+                    if (!s || s === 'NA' || s === 'N/A' || s === 'NONE' || s === '-') return null;
+                    const n = parseFloat(s);
+                    if (!isNaN(n)) {
+                        if (n === 0) return null; // ignore 0
+                        return n;
+                    }
+                    return null;
+                }
+
+                function colorForConfidence(confNum) {
+                    if (confNum === null) return '';
+                    if (confNum < 0.9) return 'red';
+                    if (confNum < 0.97) return 'orange';
+                    return '';
+                }
+
+                function getFileUrl(item) {
+                    if (!item) return null;
+                    const direct = item.file_url || item.url || item.pdf_url || item.view_url || item.signed_url;
+                    if (direct) return direct;
+                    if (window.LOCAL_FILE_URLS && item.filename && window.LOCAL_FILE_URLS[item.filename]) {
+                        return window.LOCAL_FILE_URLS[item.filename];
+                    }
+                    if (window.FILE_BASE_URL && item.filename) {
+                        const base = String(window.FILE_BASE_URL).replace(/\/$/, '');
+                        return base + '/' + encodeURIComponent(item.filename);
+                    }
+                    return null;
+                }
+
+                function jsonToForm(obj, path = '') {
+                    const container = $('<div class="ms-2"></div>');
+                    if (Array.isArray(obj)) {
+                        obj.forEach((item, idx) => {
+                            const itemPath = path + '[' + idx + ']';
+                            const group = $(`
+                                <div class="mb-2 p-2 border rounded">
+                                    <div class="text-muted small mb-1">[${idx}]</div>
+                                </div>
+                            `);
+                            group.append(jsonToForm(item, itemPath));
+                            container.append(group);
+                        });
+                        return container;
+                    }
+                    if (obj && typeof obj === 'object') {
+                        Object.keys(obj).forEach((key) => {
+                            const value = obj[key];
+                            const fieldPath = path ? path + '.' + key : key;
+                            const row = $('<div class="mb-2"></div>');
+
+                            // Special handling: objects in the form { value: [val, conf] } or { value: val }
+                            const isValueWrapper = value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 1 && Object.prototype.hasOwnProperty.call(value, 'value');
+                            if (isValueWrapper) {
+                                const inner = value.value;
+                                let valPart = inner;
+                                let confPart = undefined;
+                                if (Array.isArray(inner)) {
+                                    valPart = inner[0];
+                                    confPart = inner.length > 1 ? inner[1] : undefined;
+                                }
+                                const confNum = parseConfidence(confPart);
+                                const color = colorForConfidence(confNum);
+                                const type = (typeof valPart === 'number') ? 'number' : (typeof valPart === 'boolean' ? 'checkbox' : 'text');
+                                const inputWrapper = $('<div class="input-group"></div>');
+                                const label = $(`<span class="input-group-text" style="min-width: 180px">${escapeHtml(key)}</span>`);
+                                if (color) label.css('color', color);
+                                let input;
+                                if (type === 'checkbox') {
+                                    input = $('<input class="form-check-input ms-2" type="checkbox">');
+                                    if (valPart) input.prop('checked', true);
+                                } else {
+                                    input = $(`<input class="form-control" type="${type}">`);
+                                    input.val(valPart === null ? '' : valPart);
+                                }
+                                input.attr('data-path', fieldPath);
+                                input.attr('data-type', (valPart === null) ? 'null' : typeof valPart);
+                                if (confPart !== undefined) input.attr('data-conf', confPart);
+                                inputWrapper.append(label).append(input);
+                                if (showConfidence && confNum !== null) {
+                                    inputWrapper.append(`<span class="input-group-text bg-light">conf: ${escapeHtml(confPart)}</span>`);
+                                }
+                                row.append(inputWrapper);
+                                container.append(row);
+                                return; // continue next key
+                            }
+
+                            // Recurse for other objects/arrays
+                            if (value && typeof value === 'object' && !Array.isArray(value)) {
+                                row.append(`<label class="form-label fw-semibold">${escapeHtml(key)}</label>`);
+                                row.append(jsonToForm(value, fieldPath));
+                            } else if (Array.isArray(value)) {
+                                row.append(`<label class="form-label fw-semibold">${escapeHtml(key)}</label>`);
+                                row.append(jsonToForm(value, fieldPath));
+                            } else {
+                                const type = (typeof value === 'number') ? 'number' : (typeof value === 'boolean' ? 'checkbox' : 'text');
+                                const inputWrapper = $('<div class="input-group"></div>');
+                                const label = $(`<span class="input-group-text" style="min-width: 180px">${escapeHtml(key)}</span>`);
+                                let input;
+                                if (type === 'checkbox') {
+                                    input = $('<input class="form-check-input ms-2" type="checkbox">');
+                                    if (value) input.prop('checked', true);
+                                } else {
+                                    input = $(`<input class="form-control" type="${type}">`);
+                                    input.val(value === null ? '' : value);
+                                }
+                                input.attr('data-path', fieldPath);
+                                input.attr('data-type', (value === null) ? 'null' : typeof value);
+                                inputWrapper.append(label).append(input);
+                                row.append(inputWrapper);
+                            }
+                            container.append(row);
+                        });
+                        return container;
+                    }
+
+                    // Primitive
+                    const input = $('<input class="form-control mb-2" type="text">');
+                    input.val(obj === null ? '' : obj);
+                    input.attr('data-path', path);
+                    input.attr('data-type', (obj === null) ? 'null' : typeof obj);
+                    container.append(input);
+                    return container;
+                }
+
+                function setByPath(root, path, value) {
+                    const tokens = [];
+                    const re = /([^.\[\]]+)|(\[(\d+)\])/g;
+                    let m;
+                    while ((m = re.exec(path)) !== null) {
+                        if (m[1]) tokens.push(m[1]);
+                        if (m[3]) tokens.push(Number(m[3]));
+                    }
+                    let cur = root;
+                    for (let i = 0; i < tokens.length; i++) {
+                        const t = tokens[i];
+                        const next = tokens[i + 1];
+                        const isLast = i === tokens.length - 1;
+                        if (isLast) {
+                            cur[t] = value;
+                        } else {
+                            if (typeof next === 'number') {
+                                if (!Array.isArray(cur[t])) cur[t] = [];
+                            } else {
+                                if (typeof cur[t] !== 'object' || cur[t] === null || Array.isArray(cur[t])) cur[t] = {};
+                            }
+                            cur = cur[t];
+                        }
+                    }
+                }
+
+                function collectEditedJson(cardBody) {
+                    let root = {};
+                    cardBody.find('[data-path]').each(function() {
+                        const el = $(this);
+                        const path = el.data('path');
+                        const type = el.data('type');
+                        const conf = el.data('conf');
+                        let val;
+                        if (type === 'boolean') {
+                            val = el.is(':checked');
+                        } else if (type === 'number') {
+                            const n = parseFloat(el.val());
+                            val = isNaN(n) ? null : n;
+                        } else if (type === 'null') {
+                            val = (el.val() === '') ? null : el.val();
+                        } else {
+                            val = el.val();
+                        }
+                        // If confidence is associated, keep it in an array [value, conf], else just the value
+                        if (conf !== undefined) {
+                            setByPath(root, path, [val, String(conf)]);
+                        } else {
+                            setByPath(root, path, val);
+                        }
+                    });
+                    return root;
+                }
+
+                results.data.forEach(item => {
+                    if (!item.json_response) return;
+                    try {
+                        const parsed = typeof item.json_response === 'string'
+                            ? JSON.parse(item.json_response)
+                            : item.json_response;
+
+                        const formEl = jsonToForm(parsed);
+                        const fileUrl = getFileUrl(item);
+                        const fileNameSafe = escapeHtml(item.filename || 'Unknown file');
+                        const fileLabelHtml = fileUrl
+                            ? `<a href="${fileUrl}" target="_blank" rel="noopener noreferrer">${fileNameSafe}</a>`
+                            : fileNameSafe;
+                        const resultCard = $(`
+                            <div class="card result-card mb-3">
+                                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <button class="btn btn-sm btn-outline-secondary toggle-card" title="Collapse/expand"><i class="bi bi-chevron-up"></i></button>
+                                        <div><strong>File:</strong> ${fileLabelHtml}</div>
+                                    </div>
+                                    <div class="btn-group">
+                                        <button class="btn btn-sm btn-outline-secondary copy-json">Copy JSON</button>
+                                        <button class="btn btn-sm btn-outline-primary download-json">Download JSON</button>
+                                    </div>
+                                </div>
+                                <div class="card-body"></div>
+                            </div>
+                        `);
+
+                        const cardBody = resultCard.find('.card-body');
+                        cardBody.append(formEl);
+                        resultCard.attr('data-filename', item.filename || 'result');
+
+                        // Per-card collapse
+                        resultCard.find('.toggle-card').on('click', function() {
+                            cardBody.toggleClass('d-none');
+                            const icon = $(this).find('i');
+                            icon.toggleClass('bi-chevron-up bi-chevron-down');
+                        });
+
+                        resultCard.find('.copy-json').on('click', function() {
+                            const edited = collectEditedJson(cardBody);
+                            const text = JSON.stringify(edited, null, 2);
+                            navigator.clipboard.writeText(text).then(() => {
+                                const btn = $(this);
+                                const original = btn.text();
+                                btn.text('Copied!');
+                                setTimeout(() => btn.text(original), 1500);
+                            });
+                        });
+                        resultCard.find('.download-json').on('click', function() {
+                            const edited = collectEditedJson(cardBody);
+                            const blob = new Blob([JSON.stringify(edited, null, 2)], { type: 'application/json' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = (item.filename ? item.filename.replace(/\.[^.]+$/, '') : 'result') + '.json';
+                            document.body.appendChild(a);
+                            a.click();
+                            a.remove();
+                            URL.revokeObjectURL(url);
+                        });
 
                         resultsContent.append(resultCard);
                     } catch (error) {

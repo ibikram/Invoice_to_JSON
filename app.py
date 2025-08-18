@@ -97,7 +97,8 @@ def upload_files():
 
     return jsonify({
         'success': True,
-        'payload': payload
+        'payload': payload,
+        'job_id': job_id
     })
 
 def compact_inner_dicts(obj):
@@ -113,8 +114,6 @@ def compact_inner_dicts(obj):
     compacted = re.sub(r'\{\n\s+"value": (.*?),\n\s+"conf": (.*?)\n\s+\}', r'{ "value": \1, "conf": \2 }', raw)
 
     return compacted
-
-import json
 
 def simplify_value_conf(obj):
     if isinstance(obj, dict):
@@ -146,12 +145,16 @@ def get_result():
         print("="*10)
         print(result_data)
         try:
-            for idx in range(len(result_data['data'])):
-                json_str = result_data['data'][idx]['json_response']
+            for idx in range(len(result_data.get('data', []))):
+                json_str = result_data['data'][idx].get('json_response')
+                if not json_str:
+                    continue
                 json_obj = simplify_value_conf(json.loads(json_str))
-                compact_json = compact_inner_dicts(json_obj)
-                result_data['data'][idx]['json_response'] = json_str
-        except:pass
+                # Provide simplified JSON string back to client
+                result_data['data'][idx]['json_response'] = json.dumps(json_obj, ensure_ascii=False)
+        except Exception:
+            # If simplifying fails for any reason, return the original payload
+            pass
 
         return jsonify(result_data)
 
