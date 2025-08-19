@@ -9,161 +9,590 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <style>
         :root {
-            --bg: #ffffff;
-            --card-bg: #ffffff;
-            --text: #212529;
-            --muted: #6c757d;
-            --border: #dee2e6;
-            --primary: #0d6efd;
-            --accent: #7952b3;
+            /* Warm modern color palette */
+            --bg-primary: #fef7f0;          /* Warm cream background */
+            --bg-secondary: #fff8f0;        /* Lighter cream */
+            --bg-card: #ffffff;             /* Pure white for cards */
+            --surface-elevated: #fdfbf9;    /* Subtle warm white */
+            --text-primary: #1a1a1a;        /* Rich black */
+            --text-secondary: #6b7280;      /* Warm gray */
+            --text-muted: #9ca3af;          /* Light gray */
+            
+            --accent-primary: #f59e0b;      /* Warm amber */
+            --accent-secondary: #ea580c;    /* Orange */
+            --accent-success: #10b981;      /* Emerald green */
+            --accent-info: #3b82f6;         /* Blue */
+            --accent-warning: #f59e0b;      /* Amber */
+            --accent-danger: #ef4444;       /* Red */
+            
+            --border-light: #f3f4f6;        /* Very light border */
+            --border-medium: #e5e7eb;       /* Medium border */
+            --border-focus: #f59e0b;         /* Focused border */
+            
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 25px rgba(0,0,0,0.12);
+            --shadow-warm: 0 4px 20px rgba(245,158,11,0.15);
+            
+            --gradient-warm: linear-gradient(135deg, #fef7f0 0%, #fff8f0 100%);
+            --gradient-accent: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
+            --gradient-card: linear-gradient(145deg, #ffffff 0%, #fdfbf9 100%);
         }
-        .theme-dark {
-            --bg: #0f1115;
-            --card-bg: #141820;
-            --text: #e6e6e6;
-            --muted: #a0a4ad;
-            --border: #2a2f3a;
-            --primary: #4da3ff;
-            --accent: #9b7bff;
+
+        * {
+            box-sizing: border-box;
         }
+
         body {
-            background: var(--bg);
-            color: var(--text);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--gradient-warm);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            font-weight: 400;
         }
+
+        /* Glass morphism navbar */
         .navbar-custom {
-            background: var(--card-bg);
-            border-bottom: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(245, 158, 11, 0.1);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.06);
+            transition: all 0.3s ease;
         }
-        .file-item {
-            margin-bottom: 5px;
-            padding: 8px;
-            border-radius: 4px;
-            background-color: var(--card-bg);
-            border: 1px dashed var(--border);
+
+        .navbar-brand {
+            color: var(--text-primary) !important;
+            font-weight: 600;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all 0.3s ease;
         }
-        .processing-spinner {
-            width: 1.5rem;
-            height: 1.5rem;
+
+        .navbar-brand:hover {
+            transform: translateY(-1px);
         }
-        .result-card {
-            margin-top: 20px;
-            border: 1px solid var(--border);
-            border-left: 4px solid var(--primary);
-            background: var(--card-bg);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+
+        .navbar-brand i {
+            color: var(--accent-primary);
+            font-size: 1.5rem;
+            filter: drop-shadow(0 2px 4px rgba(245,158,11,0.3));
         }
-        .file-drop-area {
-            border: 2px dashed #ccc;
-            border-radius: 8px;
-            padding: 25px;
+
+        /* Main container styling */
+        .main-container {
+            margin-top: 100px;
+            padding: 0 1rem;
+        }
+
+        /* Modern card design */
+        .main-card {
+            background: var(--gradient-card);
+            border: 1px solid var(--border-light);
+            border-radius: 24px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            transition: all 0.4s ease;
+            position: relative;
+        }
+
+        .main-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-accent);
+        }
+
+        .main-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-warm);
+        }
+
+        .card-body {
+            padding: 3rem;
+        }
+
+        /* Typography */
+        .card-title {
+            font-weight: 700;
+            font-size: 2.5rem;
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 2rem;
             text-align: center;
-            background-color: var(--card-bg);
-            transition: all 0.3s;
         }
+
+        /* File drop area with modern styling */
+        .file-drop-area {
+            border: 3px dashed var(--border-medium);
+            border-radius: 20px;
+            padding: 3rem 2rem;
+            text-align: center;
+            background: var(--bg-secondary);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .file-drop-area::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(245,158,11,0.1), transparent);
+            transition: left 0.6s;
+        }
+
+        .file-drop-area:hover {
+            border-color: var(--accent-primary);
+            background: rgba(245, 158, 11, 0.03);
+            transform: scale(1.02);
+            box-shadow: var(--shadow-warm);
+        }
+
+        .file-drop-area:hover::before {
+            left: 100%;
+        }
+
         .file-drop-area.highlight {
-            border-color: #0d6efd;
-            background-color: rgba(13,110,253,0.05);
+            border-color: var(--accent-primary);
+            background: rgba(245, 158, 11, 0.08);
+            box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
+            animation: pulse 1.5s infinite;
         }
-        #uploadProgress {
-            display: none;
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
         }
-        .success-icon {
-            color: #198754;
+
+        .file-drop-area i {
+            color: var(--accent-primary);
+            margin-bottom: 1rem;
+            filter: drop-shadow(0 4px 8px rgba(245,158,11,0.2));
+            transition: all 0.3s ease;
         }
-        .error-icon {
-            color: #dc3545;
+
+        .file-drop-area:hover i {
+            transform: scale(1.1) rotate(5deg);
         }
-        .toolbar .btn, .toolbar .form-select {
-            transition: transform 0.1s ease;
+
+        .file-drop-area p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
         }
-        .toolbar .btn:active { transform: scale(0.98); }
-        .legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; }
-        .legend .low { background: red; }
-        .legend .med { background: orange; }
-        .legend .ok { background: #198754; }
-        .card-header { position: sticky; top: 0; z-index: 1; }
-        .collapse-toggle { cursor: pointer; }
+
+        /* Modern button styling */
+        .btn-modern {
+            border-radius: 16px;
+            padding: 0.875rem 2rem;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: none;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-modern::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.6s;
+        }
+
+        .btn-modern:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary-modern {
+            background: var(--gradient-accent);
+            color: white;
+        }
+
+        .btn-primary-modern:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-warm);
+        }
+
+        .btn-success-modern {
+            background: linear-gradient(135deg, var(--accent-success) 0%, #059669 100%);
+            color: white;
+        }
+
+        .btn-success-modern:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(16,185,129,0.25);
+        }
+
+        .btn-outline-modern {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 2px solid var(--border-medium);
+        }
+
+        .btn-outline-modern:hover {
+            border-color: var(--accent-primary);
+            background: rgba(245, 158, 11, 0.05);
+            transform: translateY(-1px);
+        }
+
+        /* File item styling */
+        .file-item {
+            margin-bottom: 1rem;
+            padding: 1.25rem;
+            border-radius: 16px;
+            background: var(--bg-card);
+            border: 2px solid var(--border-light);
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .file-item:hover {
+            border-color: var(--accent-primary);
+            box-shadow: var(--shadow-md);
+            transform: translateX(8px);
+        }
+
+        .file-item strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .file-size {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .remove-file {
+            background: linear-gradient(135deg, var(--accent-danger) 0%, #dc2626 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 0.5rem 0.75rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .remove-file:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(239,68,68,0.3);
+        }
+
+        /* Progress styling */
+        .progress {
+            height: 8px;
+            border-radius: 20px;
+            background: var(--border-light);
+            overflow: hidden;
+        }
+
+        /* Alert styling */
+        .alert-modern {
+            border: none;
+            border-radius: 16px;
+            padding: 1.25rem;
+            background: var(--bg-card);
+            border-left: 4px solid var(--accent-info);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Results section */
+        .results-header {
+            background: var(--gradient-card);
+            padding: 1.5rem;
+            border-radius: 16px;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+        }
+
+        .result-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: 20px;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+        }
+
+        .result-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--gradient-accent);
+        }
+
+        .result-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .result-card .card-header {
+            background: rgba(245, 158, 11, 0.05);
+            border-bottom: 1px solid var(--border-light);
+            padding: 1.25rem;
+        }
+
+        .result-card .card-body {
+            padding: 2rem;
+        }
+
+        /* Input group styling */
+        .input-group {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s ease;
+            margin-bottom: 1rem;
+        }
+
+        .input-group:focus-within {
+            box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
+        }
+
+        .input-group-text {
+            border: 2px solid var(--border-light);
+            border-right: none;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .form-control, .form-select {
+            border: 2px solid var(--border-light);
+            border-left: none;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--accent-primary);
+            box-shadow: none;
+            outline: none;
+        }
+
+        /* Legend dots */
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .legend .low { background: linear-gradient(135deg, var(--accent-danger) 0%, #dc2626 100%); }
+        .legend .med { background: linear-gradient(135deg, var(--accent-warning) 0%, #d97706 100%); }
+        .legend .ok { background: linear-gradient(135deg, var(--accent-success) 0%, #004630 100%); }
+
+        /* Toolbar styling */
+        .toolbar {
+            background: var(--bg-secondary);
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+
+        .toolbar .btn-sm {
+            border-radius: 10px;
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .toolbar .form-select-sm {
+            border-radius: 10px;
+            border: 2px solid var(--border-medium);
+        }
+
+        /* Status message styling */
+        #statusMessage {
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        /* Hover animations */
+        .btn-modern:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .card-body {
+                padding: 2rem 1.5rem;
+            }
+            
+            .card-title {
+                font-size: 2rem;
+            }
+            
+            .file-drop-area {
+                padding: 2rem 1rem;
+            }
+            
+            .main-container {
+                margin-top: 80px;
+            }
+        }
+
+        /* Loading animation */
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .processing-shimmer::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background: linear-gradient(90deg, transparent, rgba(245,158,11,0.1), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+
+        /* Success and error states */
+        .success-icon { color: var(--accent-success); }
+        .error-icon { color: var(--accent-danger); }
+
+        /* Micro-interactions */
+        .interactive-element {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .interactive-element:hover {
+            transform: scale(1.02);
+        }
+
+        .interactive-element:active {
+            transform: scale(0.98);
+        }
     </style>
 </head>
 <body>
     <!-- Top Navbar -->
     <nav class="navbar navbar-custom fixed-top">
-        <div class="container-fluid px-3">
-            <span class="navbar-brand mb-0 h5 d-flex align-items-center gap-2">
-                <i class="bi bi-receipt"></i> Invoice Processor
+        <div class="container-fluid px-4">
+            <span class="navbar-brand mb-0 h5">
+                <i class="bi bi-receipt-cutoff"></i> 
+                Invoice Processor
             </span>
-            <div class="d-flex align-items-center gap-2">
-                <button id="toggleTheme" class="btn btn-sm btn-outline-secondary">
-                    <i class="bi bi-moon-stars me-1"></i><span class="theme-label">Dark</span>
-                </button>
-            </div>
         </div>
     </nav>
-    <div class="container" style="margin-top: 80px;">
-        <div class="row">
-            <div class="col-md-8">
-                <div class="card shadow-sm">
+
+    <div class="container main-container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-xl-9">
+                <div class="main-card">
                     <div class="card-body">
-                        <h2 class="card-title text-center mb-4">PDF Invoice Processor</h2>
+                        <h2 class="card-title">PDF Invoice Processor</h2>
                         
                         <!-- File Upload Section -->
-                        <div class="file-drop-area mb-3" id="dropArea">
+                        <div class="file-drop-area mb-4" id="dropArea">
                             <div>
-                                <i class="bi bi-cloud-arrow-up fs-1"></i>
+                                <i class="bi bi-cloud-arrow-up-fill fs-1"></i>
                                 <p>Drag & drop PDF files here or click to browse</p>
                                 <input type="file" id="fileInput" multiple accept=".pdf" class="d-none">
-                                <button class="btn btn-primary" id="browseButton">Browse Files</button>
+                                <button class="btn btn-modern btn-primary-modern" id="browseButton">
+                                    <i class="bi bi-folder2-open me-2"></i>Browse Files
+                                </button>
                             </div>
                         </div>
                         
                         <!-- Selected Files List -->
-                        <div id="fileList" class="mb-3"></div>
+                        <div id="fileList" class="mb-4"></div>
                         
                         <!-- Upload Button -->
-                        <div class="d-grid gap-2">
-                            <button class="btn btn-success" id="uploadButton" disabled>
-                                Upload Files
+                        <div class="d-grid gap-2 mb-4">
+                            <button class="btn btn-modern btn-success-modern" id="uploadButton" disabled>
+                                <i class="bi bi-upload me-2"></i>Upload & Process Files
                             </button>
                         </div>
                         
                         <!-- Progress Bar -->
-                        <div class="mt-3" id="uploadProgress">
-                            <div class="progress">
+                        <div class="mt-4" id="uploadProgress" style="display: none;">
+                            <div class="progress mb-3">
                                 <div class="progress-bar progress-bar-striped progress-bar-animated" 
                                      role="progressbar" style="width: 100%"></div>
                             </div>
-                            <p class="text-center mt-2" id="statusMessage">Processing...</p>
+                            <p id="statusMessage">Processing your files...</p>
                         </div>
                         
                         <!-- Job ID Display -->
-                        <div class="alert alert-info mt-3" id="jobIdContainer" style="display: none">
-                            <strong>Job ID:</strong> <span id="jobId"></span>
-                            <button class="btn btn-sm btn-outline-primary float-end" id="copyJobId">Copy</button>
+                        <div class="alert alert-modern" id="jobIdContainer" style="display: none">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>Job ID:</strong> <span id="jobId" class="font-monospace"></span>
+                                </div>
+                                <button class="btn btn-sm btn-outline-modern" id="copyJobId">
+                                    <i class="bi bi-clipboard me-1"></i>Copy
+                                </button>
+                            </div>
                         </div>
                         
                         <!-- Results Section -->
-                        <div id="resultsContainer" class="mt-4" style="display: none">
-                            <div class="d-flex align-items-center justify-content-between border-bottom pb-2 toolbar">
-                                <div class="d-flex align-items-center gap-2">
-                                    <h4 class="m-0">Results</h4>
-                                    <div class="legend ms-3 small text-muted">
-                                        <span class="legend-dot low"></span><span class="me-3">conf < 0.9</span>
-                                        <span class="legend-dot med"></span><span class="me-3">0.9 ≤ conf < 0.97</span>
-                                        <span class="legend-dot ok"></span><span>conf ≥ 0.97</span>
+                        <div id="resultsContainer" class="mt-5" style="display: none">
+                            <div class="results-header">
+                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <h4 class="m-0 fw-bold">
+                                            <i class="bi bi-check-circle-fill text-success me-2"></i>Results
+                                        </h4>
+                                        <div class="legend small text-muted">
+                                            <span class="legend-dot low"></span><span class="me-3">Low confidence</span>
+                                            <span class="legend-dot med"></span><span class="me-3">Medium confidence</span>
+                                            <span class="legend-dot ok"></span><span>High confidence</span>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="d-flex align-items-center gap-2">
-                                    <div class="d-flex align-items-center gap-2 me-2">
-                                        <label for="viewMode" class="form-label m-0 me-1">View</label>
-                                        <select id="viewMode" class="form-select form-select-sm" style="width: auto;">
-                                            <option value="values" selected>Values only</option>
-                                            <option value="values_conf">Values + confidence</option>
-                                        </select>
+                                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <label for="viewMode" class="form-label m-0 fw-medium">View</label>
+                                            <select id="viewMode" class="form-select form-select-sm">
+                                                <option value="values" selected>Values only</option>
+                                                <option value="values_conf">Values + confidence</option>
+                                            </select>
+                                        </div>
+                                        <button id="expandAll" class="btn btn-sm btn-outline-modern" title="Expand all">
+                                            <i class="bi bi-arrows-expand"></i>
+                                        </button>
+                                        <button id="collapseAll" class="btn btn-sm btn-outline-modern" title="Collapse all">
+                                            <i class="bi bi-arrows-collapse"></i>
+                                        </button>
+                                        <!-- <button id="copyAll" class="btn btn-sm btn-outline-modern" title="Copy all JSON">
+                                            <i class="bi bi-clipboard"></i>
+                                        </button>
+                                        <button id="downloadAll" class="btn btn-sm btn-modern btn-primary-modern" title="Download all JSON">
+                                            <i class="bi bi-download me-1"></i>Download
+                                        </button> -->
                                     </div>
-                                    <button id="expandAll" class="btn btn-sm btn-outline-secondary" title="Expand all"><i class="bi bi-arrows-expand"></i></button>
-                                    <button id="collapseAll" class="btn btn-sm btn-outline-secondary" title="Collapse all"><i class="bi bi-arrows-collapse"></i></button>
-                                    <button id="copyAll" class="btn btn-sm btn-outline-secondary" title="Copy all JSON"><i class="bi bi-clipboard"></i></button>
-                                    <button id="downloadAll" class="btn btn-sm btn-primary" title="Download all JSON"><i class="bi bi-download me-1"></i>Download</button>
                                 </div>
                             </div>
                             <div id="resultsContent"></div>
@@ -185,25 +614,7 @@
             let lastResults = null;     // cache last results to re-render on toggle
             window.LOCAL_FILE_URLS = {}; // filename -> object URL for locally selected files
             
-            // Theme init
-            function applyTheme(mode) {
-                if (mode === 'dark') {
-                    $('body').addClass('theme-dark');
-                    $('.theme-label').text('Light');
-                    $('#toggleTheme i').removeClass('bi-moon-stars').addClass('bi-sun');
-                } else {
-                    $('body').removeClass('theme-dark');
-                    $('.theme-label').text('Dark');
-                    $('#toggleTheme i').removeClass('bi-sun').addClass('bi-moon-stars');
-                }
-            }
-            let savedTheme = localStorage.getItem('theme') || 'light';
-            applyTheme(savedTheme);
-            $('#toggleTheme').on('click', function() {
-                savedTheme = (savedTheme === 'light') ? 'dark' : 'light';
-                localStorage.setItem('theme', savedTheme);
-                applyTheme(savedTheme);
-            });
+            // Dark theme toggle removed
             
             // Connect file input to browse button
             $("#browseButton").click(function() {
@@ -683,7 +1094,8 @@
                                 if (confPart !== undefined) input.attr('data-conf', confPart);
                                 inputWrapper.append(label).append(input);
                                 if (showConfidence && confNum !== null) {
-                                    inputWrapper.append(`<span class="input-group-text bg-light">conf: ${escapeHtml(confPart)}</span>`);
+                                    const confPct = Math.round(confNum * 100);
+                                    inputWrapper.append(`<span class="input-group-text bg-light">${confPct}%</span>`);
                                 }
                                 row.append(inputWrapper);
                                 container.append(row);
