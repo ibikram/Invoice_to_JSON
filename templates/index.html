@@ -1211,6 +1211,7 @@
                         const parsed = typeof item.json_response === 'string'
                             ? JSON.parse(item.json_response)
                             : item.json_response;
+                        delete parsed.overall_conf; // remove overall_conf if present
 
                         const formEl = jsonToForm(parsed);
                         const fileUrl = getFileUrl(item);
