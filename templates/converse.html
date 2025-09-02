@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Question Answering Assistant</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00947b;
+            --secondary: #1a567e;
+            --accent: #667eea;
+            --light: #f7f8f5;
+            --cream: #f3f5f0;
+            --dark: #001d3f;
+            --success: #28a745;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --info: #17a2b8;
+            --shadow-light: rgba(0, 148, 123, 0.15);
+            --shadow-dark: rgba(26, 86, 126, 0.2);
+        }
+        
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .main-container {
+            width: 80%; /* Make parent card 70-80% of page */
+            max-width: 1600px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px var(--shadow-light), 0 8px 16px var(--shadow-dark);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            min-height: calc(100vh - 40px); /* Full height minus body padding */
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header-section {
+            background: var(--dark);
+            color: white;
+            padding: 0.9rem; /* thinner header */
+            text-align: center;
+            position: relative;
+        }
+        
+        .header-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" patternUnits="userSpaceOnUse" width="100" height="100"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+        }
+        
+        .logo-container {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .logo {
+            height: 48px;
+            width: auto;
+            filter: brightness(1.1) contrast(1.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .logo:hover {
+            transform: scale(1.05);
+        }
+        
+        .header-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .about-link {
+            color: white !important;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 12px 24px;
+            border-radius: 50px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .about-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+        
+        .content-grid {
+            display: grid;
+            grid-template-columns: 0.5fr 1.5fr;
+            gap: 0;
+            min-height: 600px;
+            flex: 1 1 auto; /* Fill remaining space */
+            min-height: 0; /* Allow children to shrink within */
+        }
+        
+        .upload-section {
+            background: linear-gradient(145deg, var(--light) 0%, rgba(247, 248, 245, 0.8) 100%);
+            padding: 2rem;
+            border-right: 2px solid rgba(0, 148, 123, 0.2);
+            display: flex;
+            flex-direction: column;
+            min-height: 0; /* Enable inner flex to grow/shrink */
+        }
+        
+        .chat-section {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, var(--cream) 100%);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            min-height: 0; /* Enable inner flex to grow/shrink */
+        }
+        
+        .section-title {
+            color: var(--dark);
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .section-title i {
+            color: var(--primary);
+        }
+        
+        /* Upload Area Styles */
+        .upload-container {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            min-height: 0;
+        }
+        
+        .file-drop-area {
+            border: 3px dashed var(--primary);
+            border-radius: 16px;
+            padding: 3rem 2rem;
+            text-align: center;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.5) 0%, rgba(247, 248, 245, 0.5) 100%);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            flex: 1 1 auto; /* Grow to use extra space */
+        }
+        
+        .file-drop-area::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+            transform: rotate(-45deg);
+            transition: all 0.6s ease;
+            opacity: 0;
+        }
+        
+        .file-drop-area:hover::before {
+            opacity: 1;
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(-45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(-45deg); }
+        }
+        
+        .file-drop-area:hover {
+            border-color: var(--accent);
+            background: linear-gradient(145deg, rgba(102, 126, 234, 0.1) 0%, rgba(0, 148, 123, 0.1) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px var(--shadow-light);
+        }
+        
+        .file-drop-area.dragover {
+            border-color: var(--accent);
+            background: linear-gradient(145deg, rgba(102, 126, 234, 0.2) 0%, rgba(0, 148, 123, 0.2) 100%);
+            transform: scale(1.02);
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .file-drop-area:hover .upload-icon {
+            color: var(--accent);
+            transform: scale(1.1);
+        }
+        
+        .upload-text {
+            color: var(--dark);
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .upload-subtext {
+            color: var(--secondary);
+            font-size: 0.9rem;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .file-info {
+            background: rgba(102, 126, 234, 0.2);
+            border: 2px solid var(--accent);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-top: 1rem;
+            display: none;
+        }
+        
+        .file-info.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .file-details {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: var(--dark);
+        }
+        
+        .file-icon {
+            font-size: 2rem;
+            color: var(--danger);
+        }
+        
+        .upload-progress {
+            margin-top: 1rem;
+            display: none;
+        }
+        
+        .upload-progress.show {
+            display: block;
+        }
+        
+        .progress {
+            height: 8px;
+            background: rgba(0, 148, 123, 0.2);
+            border-radius: 50px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            transition: width 0.3s ease;
+        }
+        
+        /* Chat Area Styles */
+        .chat-container {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            min-height: 0; /* Allow messages to scroll */
+        }
+        
+        .chat-messages {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 16px;
+            padding: 1.5rem;
+            flex: 1 1 auto;
+            overflow-y: auto;
+            border: 2px solid rgba(0, 148, 123, 0.2);
+            backdrop-filter: blur(5px);
+            min-height: 0;
+        }
+        
+        .message {
+            margin-bottom: 1rem;
+            padding: 1rem;
+            border-radius: 16px;
+            max-width: 85%;
+            word-wrap: break-word;
+            animation: messageSlide 0.3s ease;
+        }
+        
+        @keyframes messageSlide {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .user-message {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 4px 12px var(--shadow-light);
+        }
+        
+        .bot-message {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(247, 248, 245, 0.8));
+            color: var(--dark);
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+            border: 2px solid rgba(0, 148, 123, 0.1);
+        }
+        
+        .message-header {
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .message-content {
+            line-height: 1.5;
+        }
+        
+        .chat-input-area {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 16px;
+            padding: 10px 10px 10px 10px; /* Less bottom padding */
+            border: 2px solid rgba(0, 148, 123, 0.2);
+            backdrop-filter: blur(5px);
+        }
+        
+        .input-group {
+            margin-bottom: 1rem;
+        }
+        /* Ensure label + counter on one row, textarea below */
+        .chat-input-area .input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.5rem;
+        }
+        /* New layout: textarea left, buttons right */
+        .chat-input-area .input-and-buttons {
+            display: flex;
+            gap: 1rem;
+            align-items: stretch;
+        }
+        .chat-input-area .textarea-col {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        .chat-input-area .textarea-col .form-control {
+            flex: 1 1 auto;
+        }
+        /* Make buttons a vertical column beside the textarea */
+        .chat-input-area .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            width: 120px; /* thinner buttons column */
+            align-self: stretch;
+        }
+        /* Bootstrap sets input-group > .form-control width to 1%; undo here */
+        .chat-input-area .input-group > .form-control {
+            width: 100% !important;
+            flex: 0 0 auto;
+            align-self: stretch;
+        }
+        .label-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            width: 100%;
+        }
+        .label-row .form-label {
+            margin: 0;
+        }
+        .label-row .char-counter {
+            margin-top: 0;
+            text-align: right;
+            white-space: nowrap;
+        }
+        
+        .form-label {
+            color: var(--dark);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .form-control {
+            border: 2px solid rgba(0, 148, 123, 0.3);
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            background: rgba(247, 248, 245, 0.5);
+            color: var(--dark);
+            transition: all 0.3s ease;
+        }
+        
+        /* Textarea: fixed to 3 lines via JS; allow scroll */
+        .chat-input-area .form-control {
+            overflow-y: auto;
+            resize: none;
+            min-height: 0;
+            max-height: none;
+            line-height: 1.4;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 0.2rem rgba(0, 148, 123, 0.25);
+            background: rgba(247, 248, 245, 0.8);
+            outline: none;
+        }
+
+        /* Temporary invalid styling for inline validation */
+        .form-control.invalid {
+            border-color: var(--danger);
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+        }
+        
+        .char-counter {
+            text-align: right;
+            font-size: 0.8rem;
+            color: var(--secondary);
+            margin-top: 0.25rem;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .btn {
+            border: none;
+            border-radius: 50px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            transform: translate(-50%, -50%);
+        }
+        
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            flex: 1;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--secondary), var(--accent));
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px var(--shadow-light);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--danger), #e74c3c);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #e74c3c, var(--danger));
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px var(--shadow-dark);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .btn:disabled::before {
+            display: none;
+        }
+        
+        /* Typing Indicator */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--warm-secondary);
+            font-style: italic;
+        }
+        
+        .typing-dots {
+            display: flex;
+            gap: 3px;
+        }
+        
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--primary);
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-8px); }
+        }
+        
+        /* Status Messages */
+        .status-message {
+            padding: 1rem;
+            border-radius: 12px;
+            margin: 1rem 0;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .status-message.show {
+            display: block;
+        }
+        
+        .status-success {
+            background: rgba(40, 167, 69, 0.1);
+            color: #155724;
+            border: 2px solid rgba(40, 167, 69, 0.3);
+        }
+        
+        .status-error {
+            background: rgba(220, 53, 69, 0.1);
+            color: #721c24;
+            border: 2px solid rgba(220, 53, 69, 0.3);
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .main-container {
+                width: 95%;
+                border-radius: 16px;
+            }
+            
+            .header-section {
+                padding: 1.5rem;
+            }
+            
+            .header-title {
+                font-size: 1.5rem;
+                min-width: auto;
+            }
+            
+            .logo-container {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .upload-section,
+            .chat-section {
+                padding: 1.5rem;
+            }
+            
+            .upload-section {
+                border-right: none;
+                border-bottom: 2px solid rgba(0, 148, 123, 0.2);
+            }
+            
+            .file-drop-area {
+                padding: 2rem 1rem;
+                min-height: 150px;
+            }
+            
+            .upload-icon {
+                font-size: 2.5rem;
+            }
+            
+            .section-title {
+                font-size: 1.3rem;
+            }
+            
+            /* Stack textarea and buttons on small screens */
+            .chat-input-area .input-and-buttons {
+                flex-direction: column;
+            }
+            .chat-input-area .button-group {
+                width: 100%;
+                flex-direction: column;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header-title {
+                font-size: 1.2rem;
+            }
+            
+            .upload-section,
+            .chat-section {
+                padding: 1rem;
+            }
+            
+            .file-drop-area {
+                padding: 1.5rem 0.75rem;
+            }
+            
+            .message {
+                max-width: 95%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="header-section">
+            <div class="logo-container">
+                <img class="logo" src="https://adamastech.in/wp-content/themes/atc-child/assets/images/atc-foot-logo.png" alt="ATC Logo">
+                <h1 class="header-title">Invoice Converse</h1>
+                <a href="https://adamastechconsulting.com/about-us/" 
+                   class="about-link"
+                   target="_blank" 
+                   rel="noopener noreferrer">
+                    <i class="fas fa-info-circle me-2"></i>About Us
+                </a>
+            </div>
+        </div>
+        
+        <div class="content-grid">
+            <!-- Upload Section -->
+            <div class="upload-section">
+                <h2 class="section-title">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    Document Upload
+                </h2>
+                
+                <div class="upload-container">
+                    <div class="file-drop-area" id="fileDropArea" role="button" tabindex="0" onclick="document.getElementById('fileInput').click()" onkeydown="if(event.key==='Enter'||event.key===' '){document.getElementById('fileInput').click();}">
+                        <div class="upload-icon">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <div class="upload-text">Drop your PDF file here</div>
+                        <div class="upload-subtext">or click to browse</div>
+                        <input type="file" id="fileInput" class="file-input" accept=".pdf">
+                    </div>
+                    
+                    <div class="file-info" id="fileInfo">
+                        <div class="file-details">
+                            <i class="fas fa-file-pdf file-icon"></i>
+                            <div>
+                                <div class="file-name" id="fileName">No file selected</div>
+                                <div class="file-size" id="fileSize">0 KB</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="upload-progress" id="uploadProgress">
+                        <div class="progress">
+                            <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+                        </div>
+                        <div class="text-center mt-2">
+                            <small class="text-muted">Processing document...</small>
+                        </div>
+                    </div>
+                    
+                    <div class="status-message" id="uploadStatus"></div>
+                </div>
+            </div>
+            
+            <!-- Chat Section -->
+            <div class="chat-section">
+                <h2 class="section-title">
+                    <i class="fas fa-comments"></i>
+                    Ask Questions
+                </h2>
+                
+                <div class="chat-container">
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="message bot-message">
+                            <div class="message-header">
+                                <i class="fas fa-robot"></i>
+                                Info-Fetcher
+                                <small class="opacity-75 ms-auto"><?php echo date('H:i'); ?></small>
+                            </div>
+                            <div class="message-content">
+                                Hello! Please upload a PDF document and I'll help you answer questions about its content.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-input-area">
+                        <div class="input-group">
+                            <div class="label-row">
+                                <label for="userInput" class="form-label">
+                                    <i class="fas fa-question-circle"></i>
+                                    Your Question
+                                </label>
+                                <div class="char-counter">
+                                    <span id="charCount">0</span>/1000 characters
+                                </div>
+                            </div>
+                            <div class="input-and-buttons">
+                                <div class="textarea-col">
+                                    <textarea 
+                                        class="form-control" 
+                                        id="userInput" 
+                                        rows="3" 
+                                        placeholder="Ask me anything about the uploaded document..."
+                                        maxlength="1000"
+                                        disabled></textarea>
+                                    <div id="inputHint" class="input-hint" aria-live="polite" style="display:none"></div>
+                                </div>
+                                <div class="button-group">
+                                    <button type="button" class="btn btn-primary" id="sendBtn" disabled>
+                                        <i class="fas fa-paper-plane me-2"></i>Send
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" id="clearBtn">
+                                        <i class="fas fa-broom me-2"></i>Clear
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            let isProcessing = false;
+            let chatHistory = [];
+            let hasUploadedFile = false;
+            
+            // File upload elements
+            const fileDropArea = $('#fileDropArea');
+            const fileInput = $('#fileInput');
+            const fileInfo = $('#fileInfo');
+            const fileName = $('#fileName');
+            const fileSize = $('#fileSize');
+            const uploadProgress = $('#uploadProgress');
+            const progressBar = $('#progressBar');
+            const uploadStatus = $('#uploadStatus');
+            
+            // Chat elements
+            const chatMessages = $('#chatMessages');
+            const userInput = $('#userInput');
+            const sendBtn = $('#sendBtn');
+            const clearBtn = $('#clearBtn');
+            const charCount = $('#charCount');
+            const inputHint = $('#inputHint');
+            
+            // Cookie utility functions
+            function setCookie(name, value, days = 7) {
+                const expires = new Date();
+                expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+                const expiresStr = expires.toUTCString();
+                document.cookie = `${name}=${encodeURIComponent(value)};expires=${expiresStr};path=/;SameSite=Lax`;
+            }
+            
+            function getCookie(name) {
+                const nameEQ = name + "=";
+                const ca = document.cookie.split(';');
+                for (let i = 0; i < ca.length; i++) {
+                    let c = ca[i];
+                    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                    if (c.indexOf(nameEQ) === 0) {
+                        return decodeURIComponent(c.substring(nameEQ.length, c.length));
+                    }
+                }
+                return null;
+            }
+            
+            function deleteCookie(name) {
+                document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
+            }
+            
+            function saveChatHistory() {
+                try {
+                    const limitedHistory = chatHistory.slice(-50);
+                    const historyJson = JSON.stringify(limitedHistory);
+                    
+                    if (historyJson.length > 3500) {
+                        const shorterHistory = chatHistory.slice(-25);
+                        setCookie('chatHistory', JSON.stringify(shorterHistory), 7);
+                    } else {
+                        setCookie('chatHistory', historyJson, 7);
+                    }
+                } catch (error) {
+                    console.warn('Failed to save chat history to cookies:', error);
+                }
+            }
+            
+            function loadChatHistoryFromCookie() {
+                try {
+                    const historyJson = getCookie('chatHistory');
+                    if (historyJson) {
+                        const parsedHistory = JSON.parse(historyJson);
+                        if (Array.isArray(parsedHistory) && parsedHistory.length > 0) {
+                            chatHistory = parsedHistory;
+                            return true;
+                        }
+                    }
+                } catch (error) {
+                    console.warn('Failed to load chat history from cookies:', error);
+                    deleteCookie('chatHistory');
+                }
+                return false;
+            }
+            
+            // File Upload Functionality
+            fileDropArea.click(function() {
+                fileInput.click();
+            });
+            
+            fileDropArea.on('dragover', function(e) {
+                e.preventDefault();
+                $(this).addClass('dragover');
+            });
+            
+            fileDropArea.on('dragleave', function(e) {
+                e.preventDefault();
+                $(this).removeClass('dragover');
+            });
+            
+            fileDropArea.on('drop', function(e) {
+                e.preventDefault();
+                $(this).removeClass('dragover');
+                
+                const files = e.originalEvent.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFileSelection(files[0]);
+                }
+            });
+            
+            fileInput.change(function() {
+                if (this.files.length > 0) {
+                    handleFileSelection(this.files[0]);
+                }
+            });
+            
+            function handleFileSelection(file) {
+                if (!file.name.toLowerCase().endsWith('.pdf')) {
+                    showStatus('error', 'Please select a PDF file.');
+                    return;
+                }
+                
+                if (file.size > 50 * 1024 * 1024) { // 50MB limit
+                    showStatus('error', 'File size must be less than 50MB.');
+                    return;
+                }
+                
+                // Update file info
+                fileName.text(file.name);
+                fileSize.text(formatFileSize(file.size));
+                fileInfo.addClass('show');
+                
+                // Upload file
+                uploadFile(file);
+            }
+            
+            function uploadFile(file) {
+                const formData = new FormData();
+                formData.append('files', file);
+                
+                uploadProgress.addClass('show');
+                progressBar.css('width', '0%');
+                
+                // Simulate progress
+                let progress = 0;
+                const progressInterval = setInterval(() => {
+                    progress += Math.random() * 15;
+                    if (progress > 90) progress = 90;
+                    progressBar.css('width', progress + '%');
+                }, 200);
+                
+                $.ajax({
+                    url: '/addpdf',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        clearInterval(progressInterval);
+                        progressBar.css('width', '100%');
+                        
+                        setTimeout(() => {
+                            uploadProgress.removeClass('show');
+                            showStatus('success', 'Document uploaded successfully! You can now ask questions.');
+                            hasUploadedFile = true;
+                            enableChatInterface();
+                        }, 500);
+                    },
+                    error: function(xhr) {
+                        clearInterval(progressInterval);
+                        uploadProgress.removeClass('show');
+                        
+                        let errorMessage = 'Failed to upload document.';
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            errorMessage = response.error || errorMessage;
+                        } catch (e) {
+                            // Use default error message
+                        }
+                        
+                        showStatus('error', errorMessage);
+                        fileInfo.removeClass('show');
+                    }
+                });
+            }
+            
+            function enableChatInterface() {
+                userInput.prop('disabled', false);
+                sendBtn.prop('disabled', false);
+                userInput.attr('placeholder', 'Ask me anything about the uploaded document...');
+                // Focus and ensure proper height after enabling
+                userInput.focus();
+                userInput.trigger('input');
+            }
+            
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+            
+            function showStatus(type, message) {
+                uploadStatus.removeClass('status-success status-error').addClass('status-' + type);
+                uploadStatus.html(`<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>${message}`);
+                uploadStatus.addClass('show');
+                
+                setTimeout(() => {
+                    uploadStatus.removeClass('show');
+                }, 5000);
+            }
+            
+            // Chat Functionality
+            function loadChatHistory() {
+                // Always reset history on page load
+                deleteCookie('chatHistory');
+                const welcomeMessage = {
+                    sender: 'bot',
+                    content: 'Hello! Please upload a PDF document and I\'ll help you answer questions about its content.',
+                    timestamp: new Date().toISOString(),
+                    isError: false
+                };
+                chatHistory = [welcomeMessage];
+                chatMessages.empty();
+                renderChatHistory();
+            }
+            
+            function renderChatHistory() {
+                chatHistory.forEach(function(message) {
+                    renderMessage(message.sender, message.content, message.timestamp, message.isError);
+                });
+                scrollToBottom();
+            }
+            
+            function renderMessage(sender, content, timestamp, isError = false) {
+                const messageTime = new Date(timestamp).toLocaleTimeString();
+                const messageClass = sender === 'user' ? 'user-message' : 'bot-message';
+                const icon = sender === 'user' ? 'fas fa-user' : 'fas fa-robot';
+                const senderName = sender === 'user' ? 'You' : 'Info-Fetcher';
+                
+                const messageHtml = `
+                    <div class="message ${messageClass}">
+                        <div class="message-header">
+                            <i class="${icon}"></i>
+                            ${senderName}
+                        </div>
+                        <div class="message-content">${content}</div>
+                    </div>
+                `;
+                
+                chatMessages.append(messageHtml);
+                scrollToBottom();
+            }
+            
+            function addMessageToHistory(sender, content, isError = false) {
+                const message = {
+                    sender: sender,
+                    content: content,
+                    timestamp: new Date().toISOString(),
+                    isError: isError
+                };
+                
+                chatHistory.push(message);
+                saveChatHistory();
+            }
+            
+            function showTypingIndicator() {
+                const typingHtml = `
+                    <div class="message bot-message typing-indicator" id="typingIndicator">
+                        <div class="message-header">
+                            <i class="fas fa-robot"></i>
+                            Info-Fetcher
+                        </div>
+                        <div class="typing-dots">
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                        </div>
+                        <span class="ms-2">is typing...</span>
+                    </div>
+                `;
+                chatMessages.append(typingHtml);
+                scrollToBottom();
+            }
+            
+            function hideTypingIndicator() {
+                $('#typingIndicator').remove();
+            }
+            
+            function sendMessage() {
+                if (isProcessing || !hasUploadedFile) return;
+                
+                const query = userInput.val().trim();
+                if (!query) {
+                    showAlert('warning', 'Please enter a question first.');
+                    return;
+                }
+                
+                // Add user message
+                addMessageToHistory('user', query);
+                renderMessage('user', query, new Date().toISOString());
+                
+                // Clear input and reset height
+                userInput.val('');
+                setFixedTextareaHeight();
+                charCount.text('0');
+                
+                // Show typing indicator
+                showTypingIndicator();
+                setFormState(false);
+                
+                // Send request
+                $.ajax({
+                    url: '/fetchreponse',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ query: query }),
+                    success: function(response) {
+                        hideTypingIndicator();
+                        const botResponse = response.message || 'I received your question but couldn\'t generate a proper response.';
+                        
+                        addMessageToHistory('bot', botResponse, false);
+                        renderMessage('bot', botResponse, new Date().toISOString());
+                    },
+                    error: function(xhr) {
+                        hideTypingIndicator();
+                        let errorMessage = 'Sorry, I encountered an error while processing your request.';
+                        
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            errorMessage = response.error || errorMessage;
+                        } catch (e) {
+                            // Use default error message
+                        }
+                        
+                        addMessageToHistory('bot', errorMessage, true);
+                        renderMessage('bot', errorMessage, new Date().toISOString(), true);
+                    },
+                    complete: function() {
+                        setFormState(true);
+                        userInput.focus();
+                    }
+                });
+            }
+            
+            function clearChat() {
+                chatHistory = [];
+                deleteCookie('chatHistory');
+                
+                const welcomeMessage = {
+                    sender: 'bot',
+                    content: hasUploadedFile 
+                        ? 'Chat cleared! Ask me anything about your uploaded document.' 
+                        : 'Hello! Please upload a PDF document and I\'ll help you answer questions about its content.',
+                    timestamp: new Date().toISOString(),
+                    isError: false
+                };
+                chatHistory.push(welcomeMessage);
+                saveChatHistory();
+                
+                chatMessages.empty();
+                renderChatHistory();
+            }
+            
+            function setFormState(enabled) {
+                isProcessing = !enabled;
+                if (hasUploadedFile) {
+                    userInput.prop('disabled', !enabled);
+                    sendBtn.prop('disabled', !enabled);
+                }
+                clearBtn.prop('disabled', !enabled);
+                
+                if (enabled) {
+                    sendBtn.html('<i class="fas fa-paper-plane me-2"></i>Send');
+                } else {
+                    sendBtn.html('<i class="fas fa-spinner fa-spin me-2"></i>Processing...');
+                }
+            }
+            
+            function scrollToBottom() {
+                chatMessages.scrollTop(chatMessages[0].scrollHeight);
+            }
+            
+            function showAlert(type, message) {
+                // Inline feedback near the input
+                inputHint.stop(true, true).text(message).show();
+                if (type === 'warning' || type === 'error') {
+                    userInput.addClass('invalid');
+                }
+                clearTimeout(window.__inputHintTimeout);
+                window.__inputHintTimeout = setTimeout(() => {
+                    inputHint.fadeOut(150);
+                    userInput.removeClass('invalid');
+                }, 2500);
+            }
+            
+            // Helper: fix textarea height to 3 lines and keep scrolled to end
+            const MAX_LINES = 3;
+            function setFixedTextareaHeight() {
+                const el = userInput[0];
+                if (!el) return;
+                const $el = $(el);
+                const lh = parseFloat($el.css('line-height')) || 20; // px
+                const pt = parseFloat($el.css('padding-top')) || 0;
+                const pb = parseFloat($el.css('padding-bottom')) || 0;
+                const bt = parseFloat($el.css('border-top-width')) || 0;
+                const bb = parseFloat($el.css('border-bottom-width')) || 0;
+                const maxH = (lh * MAX_LINES) + pt + pb + bt + bb;
+                el.style.height = maxH + 'px';
+                el.style.overflowY = 'auto';
+            }
+
+            // Event Listeners
+            userInput.on('input', function() {
+                const count = $(this).val().length;
+                charCount.text(count);
+                
+                // Keep height fixed (3 lines) and scroll to end
+                setFixedTextareaHeight();
+                this.scrollTop = this.scrollHeight;
+
+                // Clear any previous inline warnings while typing
+                inputHint.hide();
+                userInput.removeClass('invalid');
+            });
+            
+            userInput.keydown(function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+            
+            sendBtn.click(function() {
+                sendMessage();
+            });
+            
+            clearBtn.click(function() {
+                // Disable buttons briefly to avoid double clicks
+                setFormState(false);
+                $.ajax({
+                    url: '/clear',
+                    type: 'POST',
+                    success: function() {
+                        // Reset client-side state to reflect cleared server
+                        hasUploadedFile = false;
+                        // Reset upload UI
+                        fileInput.val('');
+                        fileInfo.removeClass('show');
+                        uploadProgress.removeClass('show');
+                        progressBar.css('width', '0%');
+                        showStatus('success', 'Cleared uploaded document and chat.');
+                        // Disable chat input and reset fields
+                        userInput.val('').prop('disabled', true)
+                                 .attr('placeholder', 'Upload a PDF to start chatting...');
+                        setFixedTextareaHeight();
+                        sendBtn.prop('disabled', true);
+                        charCount.text('0');
+                        // Reset chat messages/history
+                        clearChat();
+                    },
+                    error: function(xhr) {
+                        let msg = 'Failed to clear server state';
+                        try {
+                            const resp = JSON.parse(xhr.responseText);
+                            msg = resp.error || msg;
+                        } catch (e) {}
+                        showStatus('error', msg);
+                    },
+                    complete: function() {
+                        // Re-enable buttons (send remains disabled by hasUploadedFile=false)
+                        setFormState(true);
+                    }
+                });
+            });
+            
+            // Initialize: fully clear server state and history on page load
+            $.post('/clear').always(function() {
+                loadChatHistory();
+                // Ensure textarea has fixed height immediately
+                setFixedTextareaHeight();
+            });
+
+            // Adjust textarea height if layout metrics change
+            $(window).on('resize', setFixedTextareaHeight);
+        });
+    </script>
+</body>
+</html>

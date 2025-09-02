@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Invoice Matcher</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='3_way_style.css') }}">
+</head>
+
+<body>
+    <nav class="navbar" aria-label="Main Navigation">
+        <div class="nav-content">
+            <span class="app-name">Invoice Matcher</span>
+            <img class="logo" src="https://adamastech.in/wp-content/themes/atc-child/assets/images/atc-foot-logo.png" alt="ATC Logo">
+        </div>
+    </nav>
+    <div class="container">
+
+        <!-- Master Document Upload -->
+        <div class="upload-section">
+            <h2 class="section-title">Master Document</h2>
+            <div class="upload-area" id="masterUploadArea">
+                <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                <div class="upload-text">
+                    Drop your master document here, or <a href="#" class="browse-link"
+                        onclick="document.getElementById('masterFileInput').click()">browse</a>
+                </div>
+                <div class="upload-info">
+                    Supports (PDF, GIF, TIFF, TIF, JPG, JPEG, PNG, BMP, WEBP) (5 pages, 20MB max)
+                </div>
+            </div>
+            <!--  Changed to single file input for master document -->
+            <input type="file" id="masterFileInput" class="file-input"
+                accept=".pdf,.gif,.tiff,.tif,.jpg,.jpeg,.png,.bmp,.webp">
+            <div class="uploaded-files" id="masterFiles"></div>
+        </div>
+
+        <!-- Additional Documents Upload -->
+        <div class="upload-section">
+            <h2 class="section-title">Additional Documents</h2>
+            <div class="upload-area" id="additionalUploadArea">
+                <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                <div class="upload-text">
+                    Drop additional documents here, or <a href="#" class="browse-link"
+                        onclick="document.getElementById('additionalFileInput').click()">browse</a>
+                </div>
+                <div class="upload-info">
+                    Supports (PDF, GIF, TIFF, TIF, JPG, JPEG, PNG, BMP, WEBP) (5 pages, 20MB max)
+                </div>
+            </div>
+            <input type="file" id="additionalFileInput" class="file-input"
+                accept=".pdf,.gif,.tiff,.tif,.jpg,.jpeg,.png,.bmp,.webp" multiple>
+            <div class="uploaded-files" id="additionalFiles"></div>
+        </div>
+
+        <!-- Process Button -->
+        <div class="process-section">
+            <button class="process-btn" id="processBtn" onclick="processDocuments()" disabled>
+                Process Documents
+            </button>
+            <div class="status-message" id="statusMessage"></div>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='3_way_script.js') }}"></script>
+</body>
+
+</html>

@@ -61,7 +61,14 @@
             box-shadow: 0 2px 20px rgba(0,0,0,0.06);
             transition: all 0.3s ease;
         }
-
+        
+        /* Left side navigation group */
+        .navbar-left {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+        
         .navbar-brand {
             color: var(--text-primary) !important;
             font-weight: 600;
@@ -70,16 +77,38 @@
             align-items: center;
             gap: 0.75rem;
             transition: all 0.3s ease;
+            margin-right: 0;
         }
-
         .navbar-brand:hover {
             transform: translateY(-1px);
         }
-
         .navbar-brand i {
             color: var(--accent-primary);
             font-size: 1.5rem;
             filter: drop-shadow(0 2px 4px rgba(245,158,11,0.3));
+        }
+        
+        /* Navigation links styling */
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+        
+        .nav-link {
+            color: var(--text-secondary) !important;
+            font-weight: 500;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .nav-link:hover {
+            color: var(--accent-primary) !important;
+            background: rgba(245, 158, 11, 0.08);
+            transform: translateY(-1px);
         }
 
         /* Main container styling */
@@ -500,16 +529,64 @@
             height: 48px;
             width: auto;
         }
+
+        /* Responsive behavior */
+        @media (max-width: 768px) {
+            .navbar-left {
+                gap: 1rem;
+            }
+            
+            .nav-links {
+                gap: 0.5rem;
+            }
+            
+            .nav-link {
+                font-size: 0.9rem;
+                padding: 0.4rem 0.8rem;
+            }
+            
+            .logo {
+                height: 40px;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .nav-links {
+                flex-direction: column;
+                gap: 0.25rem;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(20px);
+                padding: 1rem;
+                border-top: 1px solid var(--border-light);
+                display: none;
+            }
+            
+            .navbar-left {
+                position: relative;
+            }
+            
+            /* You could add a hamburger menu toggle here if needed */
+        }
     </style>
 </head>
 <body>
     <!-- Top Navbar -->
     <nav class="navbar navbar-custom fixed-top">
         <div class="container-fluid px-4">
-            <span class="navbar-brand mb-0 h5">
-                <i class="bi bi-receipt-cutoff"></i> 
-                Invoice Parser
-            </span>
+            <div class="navbar-left">
+                <span class="navbar-brand mb-0 h5">
+                    <i class="bi bi-receipt-cutoff"></i> 
+                    Invoice Parser
+                </span>
+                <div class="nav-links">
+                    <a class="nav-link" href="/threeway">PO Checker</a>
+                    <a class="nav-link" href="/converse">Converse</a>
+                </div>
+            </div>
             <a href="https://adamastechconsulting.com/about-us/" 
                    class="about-link"
                    target="_blank" 
