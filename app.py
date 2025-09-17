@@ -67,9 +67,9 @@ def write_message_history(messages):
         json.dump(messages, f, indent=4)
 
 def get_text(file_path):
-    project_id = "290338570117"
-    location = "us"
-    processor_id = "4f9411686dbd5b48"
+    project_id = os.getenv("PROJECT_ID")
+    location = os.getenv("LOCATION")
+    processor_id = os.getenv("PROCESSOR_ID")
     mime_type = "application/pdf"
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = (
         "./g-ocr-creds.json"
@@ -260,7 +260,8 @@ def process_documents():
     # Calling GCP custom processor for fetcing the json
     master_file = master["bytes"]
     master_json = {}
-    master_json[master["name"]] = process_document_sample(pdf_bytes=master_file)
+    # master_json[master["name"]] = process_document_sample(pdf_bytes=master_file)
+    master_json[master["name"]] = get_text(file_path=master_file)
 
     doc_json = {}
     futures = {}
@@ -269,10 +270,12 @@ def process_documents():
         for doc in additional:
             name = doc["name"]
             doc_bytes = doc["bytes"]
-            fut = executor.submit(process_document_sample, pdf_bytes=doc_bytes)
+            # fut = executor.submit(process_document_sample, pdf_bytes=doc_bytes)
+            fut = executor.submit(get_text, file_path=doc_bytes)
             futures[fut] = name
 
-            json_for_doc = process_document_sample(pdf_bytes=doc_bytes)
+            # json_for_doc = process_document_sample(pdf_bytes=doc_bytes)
+            json_for_doc = get_text(file_path=doc_bytes)
             doc_json[name] = json_for_doc
 
         for fut in as_completed(futures):

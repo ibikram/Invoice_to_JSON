@@ -8,7 +8,7 @@ import markdown
 load_dotenv()
 
 
-def get_claude_analysis(masterJSON: json, docJSON: list):
+def get_claude_analysis(masterJSON, docJSON):
     client = boto3.client(
         "bedrock-runtime",
         region_name=os.getenv("AWS_REGION"),
@@ -21,14 +21,14 @@ def get_claude_analysis(masterJSON: json, docJSON: list):
         f"The rest of the {len(docJSON)} files are the Delivery Chalans of {len(docJSON)} orders "
         f"from the {list(masterJSON.keys())[0]}. "
         f"Identify which Delivery Chalan corresponds to which item in the PO, "
-        f"and then find and describe the discrepancies among the {len(docJSON)} DC JSON outputs."
+        f"and then find and describe the discrepancies among the {len(docJSON)} DC OCR text outputs."
     )
 
     system_prompts = [
         {
             "text": (
                 "You are a meticulous supply chain data analyst. "
-                "You will be given one product order (PO) JSON and multiple delivery chalan (DC) JSONs. "
+                "You will be given one product order (PO) OCR text and multiple delivery chalan (DC) using information in OCR extracted text. "
                 "Match each DC to the correct PO item(s) and report any discrepancies "
                 "in quantities, item descriptions, or missing items. "
                 "Use HTML tags like <h1>, <h2>, <p>, <b>, <ul>, <li>, <table>, etc. for formatting your response to make it more readable in webpage."
