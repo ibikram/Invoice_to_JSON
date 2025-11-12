@@ -32,6 +32,8 @@ def get_claude_analysis(masterJSON, docJSON):
                 "Match each DC to the correct PO item(s) and report any discrepancies "
                 "in quantities, item descriptions, or missing items. "
                 "Use HTML tags like <h1>, <h2>, <p>, <b>, <ul>, <li>, <table>, etc. for formatting your response to make it more readable in webpage."
+                "Highlight discrepancies using <span style='color:red;'> for missing items or wrong quantities. "
+                "Highlight correct matches using <span style='color:green;'>. "
                 "Do NOT use any markdown formatting. Strictly use html formatting for the response."
             )
         }

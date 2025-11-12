@@ -4,18 +4,34 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Invoice Matcher</title>
+    <title>PO-Invoice Verification</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='3_way_style.css') }}">
 </head>
 
 <body>
-    <nav class="navbar" aria-label="Main Navigation">
-        <div class="nav-content">
-            <span class="app-name">Invoice Matcher</span>
-            <img class="logo" src="https://adamastech.in/wp-content/themes/atc-child/assets/images/atc-foot-logo.png" alt="ATC Logo">
+    <!-- Top Navbar -->
+    <nav class="navbar-custom fixed-top">
+        <div class="nav-container">
+            <div class="navbar-left">
+                <span class="navbar-brand">
+                    <i class="bi bi-receipt-cutoff"></i>
+                    PO-Invoice Verification
+                </span>
+                <div class="nav-links">
+                    <a class="nav-link" href="/">Invoice Parser</a>
+                    <a class="nav-link" href="/converse">Converse</a>
+                </div>
+            </div>
+            <a href="https://adamastechconsulting.com/about-us/"
+               class="about-link"
+               target="_blank"
+               rel="noopener noreferrer">
+                <img class="logo" src="https://adamastech.in/wp-content/themes/atc-child/assets/images/atc-foot-logo.png" alt="ATC Logo">
+            </a>
         </div>
     </nav>
-    <div class="container">
+    <div class="main-container">
 
         <!-- Master Document Upload -->
         <div class="upload-section">
