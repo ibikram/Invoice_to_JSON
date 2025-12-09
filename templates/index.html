@@ -1136,10 +1136,10 @@
                     const container = $('<div class="ms-2"></div>');
                     if (Array.isArray(obj)) {
                         obj.forEach((item, idx) => {
-                            const itemPath = path + '[' + idx + 1 + ']';
+                            const itemPath = path + '[' + idx + ']';
                             const group = $(`
                                 <div class="mb-2 p-2 border rounded">
-                                    <div class="text-muted small mb-1">[${+1}]</div>
+                                    <div class="text-muted small mb-1">[${idx+1}]</div>
                                 </div>
                             `);
                             group.append(jsonToForm(item, itemPath));
