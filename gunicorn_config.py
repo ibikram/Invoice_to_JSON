@@ -11,7 +11,7 @@ workers = 1
 threads = 1
 timeout = 600
 accesslog = os.path.join(logs_folder, 'access.log')
-errorlog = os.path.join(logs_folder, 'error.log')
+errorlog = os.path.join(logs_folder, 'app.log')
 loglevel = 'info'
 
 # Capture stdout and stderr (this will capture print statements)
