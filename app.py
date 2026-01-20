@@ -25,7 +25,7 @@ BEDROCK_LLM_MODEL_ID = os.getenv("BEDROCK_LLM_MODEL_ID")
 GENERATION_LENGTH = 1024  # Max length of generated response
 TEMPERATURE = 0.2
 TOP_P = 0.95
-PDF_BYTES = None  # Placeholder for PDF bytes, if needed
+PDF_FILES = {}  # Dictionary to store multiple PDFs: {filename: pdf_bytes}
 PDF_IMAGES = []  # Placeholder retained but not used; image conversion disabled
 
 bedrock = boto3.client(
@@ -119,34 +119,38 @@ def converse_index():
 
 @app.route('/addpdf', methods=['POST'])
 def add_pdf():
-    global PDF_BYTES, PDF_IMAGES
+    global PDF_FILES, PDF_IMAGES
     uploaded_files = request.files.getlist('files')
     if not uploaded_files or len(uploaded_files) == 0:
         return jsonify({"error": "No files provided"}), 400
     
     try:
-        file = uploaded_files[0]  # Assuming only one file is uploaded
-        if not file or file.filename == '':
-            return jsonify({"error": "No file selected"}), 400
-        if file.filename.lower().endswith('.pdf'):
-            print("Processing PDF: ", file.filename)
-            stream = BytesIO(file.read())
-            PDF_BYTES = stream.getvalue()
-            # Image conversion disabled; using OCR text only
-            # PDF_IMAGES = convert_from_bytes(PDF_BYTES, dpi=200)
-        else:
-            return jsonify({"error": "Unsupported file-type"}), 400
-        # Reset conversation history when a new document is uploaded
+        processed_files = []
+        for file in uploaded_files:
+            if not file or file.filename == '':
+                continue
+            if file.filename.lower().endswith('.pdf'):
+                print("Processing PDF: ", file.filename)
+                stream = BytesIO(file.read())
+                PDF_FILES[file.filename] = stream.getvalue()
+                processed_files.append(file.filename)
+            else:
+                print(f"Skipping unsupported file-type: {file.filename}")
+        
+        if not processed_files:
+            return jsonify({"error": "No valid PDF files provided"}), 400
+        
+        # Reset conversation history when new documents are uploaded
         write_message_history({"history": []})
         # Success response
-        return jsonify({"message": "Document uploaded successfully", "filename": file.filename}), 200
+        return jsonify({"message": "Documents uploaded successfully", "filenames": processed_files}), 200
     except Exception as e:
-        print(f"Error processing document: {e}")
+        print(f"Error processing documents: {e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/fetchreponse', methods=['POST'])
 def fetch_response():
-    global PDF_BYTES, PDF_IMAGES
+    global PDF_FILES, PDF_IMAGES
     data = request.json
     query = data.get('query', None)
     if not query:
@@ -165,9 +169,9 @@ def fetch_response():
     
     history_data = get_message_history()
     history_list = history_data.get("history", [])
-    # If this is the first interaction and no PDF loaded, require upload
-    if not PDF_BYTES:
-        return jsonify({"error": "Please upload a PDF before asking a question."}), 400
+    # If this is the first interaction and no PDFs loaded, require upload
+    if not PDF_FILES:
+        return jsonify({"error": "Please upload PDF(s) before asking a question."}), 400
 
     # Build messages for the model: prior history + new user query
     messages = []
@@ -177,11 +181,14 @@ def fetch_response():
         if role in ("user", "assistant") and isinstance(text, str):
             messages.append({"role": role, "content": [{"text": text}]})
 
-    # First user prompt after upload includes invoice context
+    # First user prompt after upload includes invoice context from all PDFs
     user_parts = []
     used_context_text = None
-    if len(history_list) == 0 and PDF_BYTES:
-        used_context_text = "### Invoice content:\n" + get_text(PDF_BYTES)
+    if len(history_list) == 0 and PDF_FILES:
+        context_parts = ["### Documents content:"]
+        for filename, pdf_bytes in PDF_FILES.items():
+            context_parts.append(f"\n--- {filename} ---\n" + get_text(pdf_bytes))
+        used_context_text = "\n".join(context_parts)
         user_parts.append({"text": used_context_text})
     user_parts.append({"text": query})
     messages.append({"role": "user", "content": user_parts})
@@ -447,8 +454,8 @@ def get_result():
 
 @app.route('/clear', methods=['POST'])
 def clear():
-    global PDF_BYTES, PDF_IMAGES
-    PDF_BYTES = None
+    global PDF_FILES, PDF_IMAGES
+    PDF_FILES.clear()
     PDF_IMAGES = []
     
     print("Cleared all stored data.")

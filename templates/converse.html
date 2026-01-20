@@ -210,6 +210,12 @@
 
         .file-details { display: flex; align-items: center; gap: 1rem; color: white; }
         .file-icon-small { font-size: 1.8rem; color: #f472b6; }
+        
+        #filesList > div:not(:first-child) { 
+            padding: 0.6rem 0; 
+            border-bottom: 1px solid rgba(255,255,255,0.05); 
+        }
+        #filesList > div:last-child { border-bottom: none; }
 
         .upload-progress { margin-top: 1rem; display: none; }
         .progress { height: 6px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; }
@@ -416,19 +422,15 @@
                         <div class="upload-icon-circle">
                             <i class="fas fa-cloud-upload-alt upload-icon"></i>
                         </div>
-                        <div class="upload-text">Upload PDF Document</div>
+                        <div class="upload-text">Upload PDF Documents</div>
                         <div class="upload-subtext">Drag & drop or click to browse</div>
                         <div class="btn-fake-browse">Browse Files</div>
-                        <input type="file" id="fileInput" class="file-input" accept=".pdf">
+                        <input type="file" id="fileInput" class="file-input" accept=".pdf" multiple>
                     </div>
                     
                     <div class="file-info" id="fileInfo">
-                        <div class="file-details">
-                            <i class="fas fa-file-pdf file-icon-small"></i>
-                            <div style="overflow: hidden;">
-                                <div class="file-name text-truncate" id="fileName" style="font-weight: 600;">No file selected</div>
-                                <div class="file-size" id="fileSize" style="font-size: 0.8rem; opacity: 0.7;">0 KB</div>
-                            </div>
+                        <div id="filesList" style="display: flex; flex-direction: column; gap: 0.8rem;">
+                            <!-- Files will be listed here -->
                         </div>
                     </div>
                     
@@ -512,8 +514,6 @@
             const fileDropArea = $('#fileDropArea');
             const fileInput = $('#fileInput');
             const fileInfo = $('#fileInfo');
-            const fileName = $('#fileName');
-            const fileSize = $('#fileSize');
             const uploadProgress = $('#uploadProgress');
             const progressBar = $('#progressBar');
             const progressText = $('#progressText');
@@ -606,39 +606,86 @@
                 
                 const files = e.originalEvent.dataTransfer.files;
                 if (files.length > 0) {
-                    handleFileSelection(files[0]);
+                    handleFileSelection(files);
                 }
             });
             
             fileInput.change(function() {
                 if (this.files.length > 0) {
-                    handleFileSelection(this.files[0]);
+                    handleFileSelection(this.files);
                 }
             });
             
-            function handleFileSelection(file) {
-                if (!file.name.toLowerCase().endsWith('.pdf')) {
-                    showStatus('error', 'Please select a PDF file.');
+            function handleFileSelection(files) {
+                // Validate all files
+                const validFiles = [];
+                let invalidFiles = [];
+                
+                for (let file of files) {
+                    if (!file.name.toLowerCase().endsWith('.pdf')) {
+                        invalidFiles.push(file.name);
+                        continue;
+                    }
+                    
+                    if (file.size > 50 * 1024 * 1024) { // 50MB limit
+                        showStatus('error', `${file.name} exceeds 50MB limit.`);
+                        continue;
+                    }
+                    
+                    validFiles.push(file);
+                }
+                
+                if (invalidFiles.length > 0) {
+                    showStatus('error', `Invalid files: ${invalidFiles.join(', ')}. Only PDF files are allowed.`);
+                }
+                
+                if (validFiles.length === 0) {
                     return;
                 }
                 
-                if (file.size > 50 * 1024 * 1024) { // 50MB limit
-                    showStatus('error', 'File size must be less than 50MB.');
-                    return;
-                }
+                // Display file list
+                displayFileList(validFiles);
                 
-                // Update file info
-                fileName.text(file.name);
-                fileSize.text(formatFileSize(file.size));
-                fileInfo.addClass('show');
-                
-                // Upload file
-                uploadFile(file);
+                // Upload files
+                uploadFiles(validFiles);
             }
             
-            function uploadFile(file) {
+            function displayFileList(files) {
+                const filesList = $('#filesList');
+                filesList.empty();
+                
+                // Add file count header
+                const fileCountHeader = $(`
+                    <div style="padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 0.5rem;">
+                        <small style="opacity: 0.8; font-weight: 500;">
+                            <i class="fas fa-check-circle me-1" style="color: #34d399;"></i>
+                            ${files.length} file${files.length !== 1 ? 's' : ''} selected
+                        </small>
+                    </div>
+                `);
+                filesList.append(fileCountHeader);
+                
+                for (let file of files) {
+                    const fileItem = $(`
+                        <div class="file-details">
+                            <i class="fas fa-file-pdf file-icon-small"></i>
+                            <div style="overflow: hidden; flex-grow: 1;">
+                                <div class="file-name text-truncate" style="font-weight: 600; font-size: 0.95rem;">${file.name}</div>
+                                <div class="file-size" style="font-size: 0.8rem; opacity: 0.7;">${formatFileSize(file.size)}</div>
+                            </div>
+                        </div>
+                    `);
+                    filesList.append(fileItem);
+                }
+                
+                fileInfo.addClass('show');
+            }
+            
+            function uploadFiles(files) {
                 const formData = new FormData();
-                formData.append('files', file);
+                for (let file of files) {
+                    formData.append('files', file);
+                }
                 
                 uploadProgress.addClass('show');
                 progressBar.css('width', '0%');
@@ -666,7 +713,7 @@
                         
                         setTimeout(() => {
                             uploadProgress.removeClass('show');
-                            showStatus('success', 'Document processed! You can now chat.');
+                            showStatus('success', `${response.filenames.length} document(s) processed! You can now chat.`);
                             hasUploadedFile = true;
                             enableChatInterface();
                         }, 500);
@@ -675,7 +722,7 @@
                         clearInterval(progressInterval);
                         uploadProgress.removeClass('show');
                         
-                        let errorMessage = 'Failed to upload document.';
+                        let errorMessage = 'Failed to upload documents.';
                         try {
                             const response = JSON.parse(xhr.responseText);
                             errorMessage = response.error || errorMessage;
@@ -692,7 +739,7 @@
             function enableChatInterface() {
                 userInput.prop('disabled', false);
                 sendBtn.prop('disabled', false);
-                userInput.attr('placeholder', 'Ask me anything about the uploaded document...');
+                userInput.attr('placeholder', 'Ask me anything about the uploaded documents...');
                 // Focus and ensure proper height after enabling
                 userInput.focus();
                 userInput.trigger('input');
@@ -722,7 +769,7 @@
                 deleteCookie('chatHistory');
                 const welcomeMessage = {
                     sender: 'bot',
-                    content: 'Hello! Please upload a PDF document on the left, and I\'ll help you answer questions about its content.',
+                    content: 'Hello! Please upload one or more PDF documents on the left, and I\'ll help you answer questions about their content.',
                     timestamp: new Date().toISOString(),
                     isError: false
                 };
