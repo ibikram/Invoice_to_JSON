@@ -1,90 +1,519 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PO-Invoice Verification</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='3_way_style.css') }}">
-</head>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Aurora Palette */
+            --bg-deep: #0f172a;
+            --bg-glass: rgba(30, 41, 59, 0.75); /* Slightly darker for readability */
+            --accent-gradient: linear-gradient(135deg, #6366f1 0%, #ec4899 100%);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-glass: 1px solid rgba(255, 255, 255, 0.1);
+            --radius-xl: 24px;
+        }
 
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding-top: 90px;
+            overflow-x: hidden;
+        }
+
+        /* Ambient Glow */
+        body::before, body::after {
+            content: '';
+            position: fixed;
+            width: 50vw;
+            height: 50vw;
+            z-index: -1;
+            filter: blur(80px);
+            opacity: 0.4;
+            animation: float 10s infinite ease-in-out;
+        }
+        body::before { top: -10%; left: -10%; background: radial-gradient(circle, #6366f1 0%, transparent 70%); }
+        body::after { bottom: -10%; right: -10%; background: radial-gradient(circle, #ec4899 0%, transparent 70%); animation-delay: -5s; }
+        @keyframes float { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(20px, 40px); } }
+
+        /* Glass Navbar */
+        .navbar-custom {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: var(--border-glass);
+            height: 70px;
+        }
+        .navbar-brand { font-weight: 700; color: white !important; display: flex; align-items: center; gap: 10px; }
+        .brand-icon { background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-link { color: var(--text-muted) !important; transition: 0.3s; padding: 8px 16px; border-radius: 20px; }
+        .nav-link:hover { color: white !important; background: rgba(255,255,255,0.05); }
+
+        /* Main Glass Card */
+        .glass-card {
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            border: var(--border-glass);
+            border-radius: var(--radius-xl);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            padding: 40px;
+            position: relative;
+        }
+        .glass-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        }
+
+        .gradient-text {
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        /* Drop Zones */
+        .drop-zone {
+            background: rgba(0, 0, 0, 0.2);
+            border: 2px dashed rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            transition: 0.3s;
+            cursor: pointer;
+            height: 200px; /* Fixed height for consistency */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .drop-zone:hover, .drop-zone.highlight {
+            border-color: #6366f1;
+            background: rgba(99, 102, 241, 0.05);
+            transform: translateY(-2px);
+        }
+        .drop-icon { font-size: 2.5rem; color: #64748b; margin-bottom: 1rem; transition: 0.3s; }
+        .drop-zone:hover .drop-icon { color: #818cf8; transform: scale(1.1); }
+
+        /* Buttons */
+        .btn-glow {
+            background: var(--accent-gradient);
+            color: white; border: none; padding: 12px 30px; border-radius: 12px;
+            font-weight: 600; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4); transition: 0.3s;
+            width: 100%;
+        }
+        .btn-glow:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(236, 72, 153, 0.5); color: white; }
+        .btn-glow:disabled { opacity: 0.5; filter: grayscale(1); cursor: not-allowed; }
+
+        .browse-link { color: #818cf8; text-decoration: none; font-weight: 600; }
+        .browse-link:hover { color: #a5b4fc; text-decoration: underline; }
+
+        /* File List Items */
+        .file-list-container {
+            min-height: 50px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        
+        .file-item {
+            background: rgba(255,255,255,0.03); border-radius: 10px; padding: 10px 15px;
+            border: 1px solid rgba(255,255,255,0.05); margin-bottom: 8px;
+            display: flex; justify-content: space-between; align-items: center;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        .status-message { margin-top: 15px; font-size: 0.9rem; min-height: 20px; }
+        .status-message.error { color: #ef4444; }
+        .status-message.success { color: #10b981; }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+        .logo { height: 45px; filter: brightness(0) invert(1); opacity: 0.8; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        
+        /* --- UPDATED: Analysis Results Container Styling --- */
+        #analysisResults {
+            background: var(--bg-glass); /* Dark Glass */
+            backdrop-filter: blur(16px);
+            border: var(--border-glass);
+            border-radius: var(--radius-xl);
+            color: var(--text-main);
+            padding: 30px;
+            margin-top: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            animation: slideUp 0.6s ease-out forwards;
+            opacity: 0;
+            overflow-x: auto; /* Handle wide tables */
+        }
+
+        /* Result Headings */
+        #analysisResults h1, #analysisResults h2, #analysisResults h3 {
+            color: white;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 10px;
+        }
+
+        /* Generic Table Styling for Results */
+        #analysisResults table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+            color: var(--text-main);
+        }
+        #analysisResults th {
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #94a3b8;
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            text-align: left;
+        }
+        #analysisResults td {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.95rem;
+        }
+        #analysisResults tr:last-child td { border-bottom: none; }
+        #analysisResults tr:hover td { background: rgba(255,255,255,0.02); }
+
+        /* Paragraphs & Lists inside results */
+        #analysisResults p { color: var(--text-muted); line-height: 1.6; }
+        #analysisResults strong { color: white; }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
 <body>
-    <!-- Top Navbar -->
-    <nav class="navbar-custom fixed-top">
-        <div class="nav-container">
-            <div class="navbar-left">
-                <span class="navbar-brand">
-                    <i class="bi bi-receipt-cutoff"></i>
+
+    <nav class="navbar navbar-custom fixed-top">
+        <div class="container-fluid px-lg-5">
+            <div class="d-flex align-items-center gap-4">
+                <a class="navbar-brand" href="#">
+                    <i class="bi bi-receipt-cutoff brand-icon"></i> 
                     PO-Invoice Verification
-                </span>
-                <div class="nav-links">
+                </a>
+                <div class="d-none d-md-flex gap-1">
+                    <a class="nav-link text-white" href="/converse">Converse</a>
                     <a class="nav-link" href="/">Invoice Parser</a>
-                    <a class="nav-link" href="/converse">Converse</a>
                 </div>
             </div>
-            <a href="https://adamastechconsulting.com/about-us/"
-               class="about-link"
-               target="_blank"
-               rel="noopener noreferrer">
+            <a href="https://adamastechconsulting.com/about-us/" target="_blank">
                 <img class="logo" src="https://adamastech.in/wp-content/themes/atc-child/assets/images/atc-foot-logo.png" alt="ATC Logo">
             </a>
         </div>
     </nav>
-    <div class="main-container">
 
-        <!-- Master Document Upload -->
-        <div class="upload-section">
-            <h2 class="section-title">Master Document</h2>
-            <div class="upload-area" id="masterUploadArea">
-                <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                </svg>
-                <div class="upload-text">
-                    Drop your master document here, or <a href="#" class="browse-link"
-                        onclick="document.getElementById('masterFileInput').click()">browse</a>
-                </div>
-                <div class="upload-info">
-                    Supports (PDF, GIF, TIFF, TIF, JPG, JPEG, PNG, BMP, WEBP) (5 pages, 20MB max)
+    <div class="container-lg">
+        <div class="row justify-content-center">
+            <div class="col-12 col-xl-10">
+                
+                <div class="glass-card mb-5 animate-fade-in">
+                    <div class="text-center mb-5">
+                        <h1 class="display-5 fw-bold mb-2">
+                            <span class="gradient-text">Purchase Order Matching</span>
+                        </h1>
+                        <p class="text-white fs-5">Verify POs against Invoices automatically.</p>
+                    </div>
+
+                    <div class="row g-4 mb-4">
+                        
+                        <div class="col-md-6">
+                            <h5 class="text-white fw-bold mb-3"><i class="bi bi-file-earmark-lock me-2 text-info"></i>Master Document</h5>
+                            
+                            <div class="drop-zone" id="masterUploadArea">
+                                <i class="bi bi-cloud-arrow-up-fill drop-icon"></i>
+                                <h6 class="text-light">Drop Master File</h6>
+                                <p class="text-white small mb-0 opacity-75">PDF, Images (Max 20MB)</p>
+                                <a href="#" class="browse-link mt-2" onclick="event.preventDefault(); document.getElementById('masterFileInput').click();">Browse Device</a>
+                            </div>
+                            
+                            <input type="file" id="masterFileInput" class="d-none" accept=".pdf,.gif,.tiff,.tif,.jpg,.jpeg,.png,.bmp,.webp">
+                            <div id="masterFiles" class="file-list-container"></div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <h5 class="text-white fw-bold mb-3"><i class="bi bi-files me-2 text-pink" style="color: #ec4899;"></i>Additional Docs</h5>
+                            
+                            <div class="drop-zone" id="additionalUploadArea">
+                                <i class="bi bi-collection-fill drop-icon" style="color: #ec4899;"></i>
+                                <h6 class="text-light">Drop Supporting Files</h6>
+                                <p class="text-white small mb-0 opacity-75">PDF, Images (Max 20MB)</p>
+                                <a href="#" class="browse-link mt-2" onclick="event.preventDefault(); document.getElementById('additionalFileInput').click();">Browse Device</a>
+                            </div>
+                            
+                            <input type="file" id="additionalFileInput" class="d-none" accept=".pdf,.gif,.tiff,.tif,.jpg,.jpeg,.png,.bmp,.webp" multiple>
+                            <div id="additionalFiles" class="file-list-container"></div>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 pt-3 border-top border-secondary border-opacity-25">
+                        <div class="row justify-content-center">
+                            <div class="col-md-6">
+                                <button class="btn btn-glow py-3 fs-5" id="processBtn" disabled>
+                                    <i class="bi bi-stars me-2"></i>Verify Documents
+                                </button>
+                                <div class="status-message text-center" id="statusMessage"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="analysisResultsContainer"></div>
+
                 </div>
             </div>
-            <!--  Changed to single file input for master document -->
-            <input type="file" id="masterFileInput" class="file-input"
-                accept=".pdf,.gif,.tiff,.tif,.jpg,.jpeg,.png,.bmp,.webp">
-            <div class="uploaded-files" id="masterFiles"></div>
-        </div>
-
-        <!-- Additional Documents Upload -->
-        <div class="upload-section">
-            <h2 class="section-title">Additional Documents</h2>
-            <div class="upload-area" id="additionalUploadArea">
-                <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                </svg>
-                <div class="upload-text">
-                    Drop additional documents here, or <a href="#" class="browse-link"
-                        onclick="document.getElementById('additionalFileInput').click()">browse</a>
-                </div>
-                <div class="upload-info">
-                    Supports (PDF, GIF, TIFF, TIF, JPG, JPEG, PNG, BMP, WEBP) (5 pages, 20MB max)
-                </div>
-            </div>
-            <input type="file" id="additionalFileInput" class="file-input"
-                accept=".pdf,.gif,.tiff,.tif,.jpg,.jpeg,.png,.bmp,.webp" multiple>
-            <div class="uploaded-files" id="additionalFiles"></div>
-        </div>
-
-        <!-- Process Button -->
-        <div class="process-section">
-            <button class="process-btn" id="processBtn" onclick="processDocuments()" disabled>
-                Process Documents
-            </button>
-            <div class="status-message" id="statusMessage"></div>
         </div>
     </div>
-    <script src="{{ url_for('static', filename='3_way_script.js') }}"></script>
-</body>
 
+    <script>
+        // --- DATA STRUCTURES ---
+        let masterDocument = null; 
+        let additionalDocuments = [];
+        const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeDragAndDrop();
+            document.getElementById('processBtn').addEventListener('click', processDocuments);
+        });
+
+        // --- DRAG & DROP INIT ---
+        function initializeDragAndDrop() {
+            const masterArea = document.getElementById('masterUploadArea');
+            const additionalArea = document.getElementById('additionalUploadArea');
+            const masterInput = document.getElementById('masterFileInput');
+            const additionalInput = document.getElementById('additionalFileInput');
+
+            setupDragAndDrop(masterArea, masterInput, 'master');
+            setupDragAndDrop(additionalArea, additionalInput, 'additional');
+
+            masterArea.addEventListener('click', () => masterInput.click());
+            additionalArea.addEventListener('click', () => additionalInput.click());
+
+            masterInput.addEventListener('change', (e) => handleFiles(e.target.files, 'master'));
+            additionalInput.addEventListener('change', (e) => handleFiles(e.target.files, 'additional'));
+        }
+
+        function setupDragAndDrop(area, input, type) {
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                area.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }, false);
+            });
+
+            ['dragenter', 'dragover'].forEach(evt => area.classList.add('highlight'));
+            ['dragleave', 'drop'].forEach(evt => area.classList.remove('highlight'));
+
+            area.addEventListener('drop', (e) => handleFiles(e.dataTransfer.files, type), false);
+            area.querySelector('a').addEventListener('click', (e) => e.stopPropagation());
+        }
+
+        // --- FILE HANDLING & BYTES CONVERSION ---
+        async function handleFiles(files, type) {
+            for (let file of files) {
+                if (validateFile(file)) {
+                    try {
+                        const bytes = await fileToBytes(file);
+                        const fileData = {
+                            name: file.name,
+                            size: file.size,
+                            type: file.type,
+                            bytes: bytes
+                        };
+
+                        if (type === 'master') {
+                            masterDocument = fileData;
+                        } else {
+                            additionalDocuments.push(fileData);
+                        }
+                    } catch (error) {
+                        console.error('Error processing file:', error);
+                        showStatus('Error processing file: ' + file.name, 'error');
+                    }
+                }
+            }
+            updateUI();
+        }
+
+        function fileToBytes(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        function validateFile(file) {
+            const allowedTypes = [
+                'application/pdf', 'image/gif', 'image/tiff', 'image/jpeg', 
+                'image/jpg', 'image/png', 'image/bmp', 'image/webp'
+            ];
+            if (!allowedTypes.includes(file.type) && !file.name.toLowerCase().endsWith('.pdf')) {
+                showStatus('Invalid file type. Please upload PDF or Images.', 'error');
+                return false;
+            }
+            if (file.size > MAX_FILE_SIZE) {
+                showStatus('File size exceeds 20MB limit.', 'error');
+                return false;
+            }
+            return true;
+        }
+
+        // --- UI UPDATES ---
+        function updateUI() {
+            const masterContainer = document.getElementById('masterFiles');
+            masterContainer.innerHTML = '';
+            const masterArea = document.getElementById('masterUploadArea');
+
+            if (masterDocument) {
+                masterArea.style.display = 'none';
+                const el = document.createElement('div');
+                el.className = 'file-item';
+                el.innerHTML = `
+                    <div class="d-flex align-items-center gap-2 overflow-hidden">
+                        <i class="bi bi-file-earmark-check-fill text-info fs-5"></i>
+                        <div class="text-truncate">
+                            <div class="text-white fw-medium text-truncate">${masterDocument.name}</div>
+                            <div class="small text-muted">${formatFileSize(masterDocument.size)}</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-sm text-secondary hover-danger p-0" onclick="removeMaster()">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                `;
+                masterContainer.appendChild(el);
+            } else {
+                masterArea.style.display = 'flex';
+            }
+
+            const addContainer = document.getElementById('additionalFiles');
+            addContainer.innerHTML = '';
+            additionalDocuments.forEach((doc, idx) => {
+                const el = document.createElement('div');
+                el.className = 'file-item';
+                el.innerHTML = `
+                    <div class="d-flex align-items-center gap-2 overflow-hidden">
+                        <i class="bi bi-file-earmark-text text-pink fs-5" style="color: #ec4899;"></i>
+                        <div class="text-truncate">
+                            <div class="text-white fw-medium text-truncate">${doc.name}</div>
+                            <div class="small text-muted">${formatFileSize(doc.size)}</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-sm text-secondary p-0" onclick="removeAdditional(${idx})">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                `;
+                addContainer.appendChild(el);
+            });
+
+            const btn = document.getElementById('processBtn');
+            const ready = masterDocument !== null && additionalDocuments.length > 0;
+            btn.disabled = !ready;
+        }
+
+        // --- REMOVAL FUNCTIONS ---
+        window.removeMaster = function() {
+            masterDocument = null;
+            document.getElementById('masterFileInput').value = '';
+            updateUI();
+        }
+
+        window.removeAdditional = function(index) {
+            additionalDocuments.splice(index, 1);
+            updateUI();
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function showStatus(msg, type) {
+            const el = document.getElementById('statusMessage');
+            el.textContent = msg;
+            el.className = 'status-message text-center ' + type;
+            if(type === 'success') setTimeout(() => { el.textContent = ''; }, 5000);
+        }
+
+        // --- HELPER: ARRAYBUFFER TO BASE64 ---
+        function arrayBufferToBase64(buffer) {
+            let binary = '';
+            const bytes = new Uint8Array(buffer);
+            const len = bytes.byteLength;
+            for (let i = 0; i < len; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return window.btoa(binary);
+        }
+
+        // --- PROCESS LOGIC (SEND TO BACKEND) ---
+        async function processDocuments() {
+            const btn = document.getElementById('processBtn');
+            const originalContent = btn.innerHTML;
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+            showStatus('Uploading and verifying documents...', 'normal');
+
+            try {
+                const payload = {
+                    masterDocument: masterDocument ? {
+                        ...masterDocument,
+                        bytes: arrayBufferToBase64(masterDocument.bytes)
+                    } : null,
+                    additionalDocuments: additionalDocuments.map(doc => ({
+                        ...doc,
+                        bytes: arrayBufferToBase64(doc.bytes)
+                    }))
+                };
+
+                const response = await fetch('/api/process-documents', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    showStatus('Verification Complete!', 'success');
+                    
+                    if (result.html) {
+                        const container = document.getElementById('analysisResultsContainer');
+                        // Injecting the result with the properly styled ID
+                        container.innerHTML = `<div id="analysisResults">${result.html}</div>`;
+                        
+                    }
+                } else {
+                    throw new Error('Server responded with error');
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus('Processing failed. Please check console.', 'error');
+            } finally {
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
 </html>

@@ -3,1366 +3,686 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Invoice Processor</title>
+    <title>AI Invoice Extractor</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    
     <style>
         :root {
-            /* Warm modern color palette */
-            --bg-primary: #fef7f0;          /* Warm cream background */
-            --bg-secondary: #fff8f0;        /* Lighter cream */
-            --bg-card: #ffffff;             /* Pure white for cards */
-            --surface-elevated: #fdfbf9;    /* Subtle warm white */
-            --text-primary: #1a1a1a;        /* Rich black */
-            --text-secondary: #6b7280;      /* Warm gray */
-            --text-muted: #9ca3af;          /* Light gray */
-            
-            --accent-primary: #f59e0b;      /* Warm amber */
-            --accent-secondary: #ea580c;    /* Orange */
-            --accent-success: #10b981;      /* Emerald green */
-            --accent-info: #3b82f6;         /* Blue */
-            --accent-warning: #f59e0b;      /* Amber */
-            --accent-danger: #ef4444;       /* Red */
-            
-            --border-light: #f3f4f6;        /* Very light border */
-            --border-medium: #e5e7eb;       /* Medium border */
-            --border-focus: #f59e0b;         /* Focused border */
-            
-            --shadow-sm: 0 2px 4px rgba(0,0,0,0.04);
-            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
-            --shadow-lg: 0 8px 25px rgba(0,0,0,0.12);
-            --shadow-warm: 0 4px 20px rgba(245,158,11,0.15);
-            
-            --gradient-warm: linear-gradient(135deg, #fef7f0 0%, #fff8f0 100%);
-            --gradient-accent: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
-            --gradient-card: linear-gradient(145deg, #ffffff 0%, #fdfbf9 100%);
-        }
-
-        * {
-            box-sizing: border-box;
+            /* "Aurora" Dark Palette */
+            --bg-deep: #0f172a;       /* Deep Slate */
+            --bg-glass: rgba(30, 41, 59, 0.7); 
+            --accent-gradient: linear-gradient(135deg, #6366f1 0%, #ec4899 100%); /* Indigo to Pink */
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-glass: 1px solid rgba(255, 255, 255, 0.1);
+            --radius-xl: 24px;
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: var(--gradient-warm);
-            color: var(--text-primary);
-            line-height: 1.6;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-deep);
+            color: var(--text-main);
             min-height: 100vh;
-            font-weight: 400;
+            padding-top: 90px;
+            overflow-x: hidden;
         }
 
-        /* Glass morphism navbar */
-        .navbar-custom {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(245, 158, 11, 0.1);
-            box-shadow: 0 2px 20px rgba(0,0,0,0.06);
-            transition: all 0.3s ease;
-        }
-        
-        /* Left side navigation group */
-        .navbar-left {
-            display: flex;
-            align-items: center;
-            gap: 2rem;
-        }
-        
-        .navbar-brand {
-            color: var(--text-primary) !important;
-            font-weight: 600;
-            font-size: 1.25rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            transition: all 0.3s ease;
-            margin-right: 0;
-        }
-        .navbar-brand:hover {
-            transform: translateY(-1px);
-        }
-        .navbar-brand i {
-            color: var(--accent-primary);
-            font-size: 1.5rem;
-            filter: drop-shadow(0 2px 4px rgba(245,158,11,0.3));
-        }
-        
-        /* Navigation links styling */
-        .nav-links {
-            display: flex;
-            gap: 1.5rem;
-            align-items: center;
-        }
-        
-        .nav-link {
-            color: var(--text-secondary) !important;
-            font-weight: 500;
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-            border-radius: 12px;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-        
-        .nav-link:hover {
-            color: var(--accent-primary) !important;
-            background: rgba(245, 158, 11, 0.08);
-            transform: translateY(-1px);
-        }
-
-        /* Main container styling */
-        .main-container {
-            margin-top: 100px;
-            padding: 0 1rem;
-        }
-
-        /* Modern card design */
-        .main-card {
-            background: var(--gradient-card);
-            border: 1px solid var(--border-light);
-            border-radius: 24px;
-            box-shadow: var(--shadow-lg);
-            overflow: hidden;
-            transition: all 0.4s ease;
-            position: relative;
-        }
-
-        .main-card::before {
+        /* Ambient Background Glow */
+        body::before, body::after {
             content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: var(--gradient-accent);
+            position: fixed;
+            width: 50vw;
+            height: 50vw;
+            z-index: -1;
+            filter: blur(80px);
+            opacity: 0.4;
+            animation: float 10s infinite ease-in-out;
+        }
+        body::before {
+            top: -10%; left: -10%;
+            background: radial-gradient(circle, #6366f1 0%, transparent 70%);
+        }
+        body::after {
+            bottom: -10%; right: -10%;
+            background: radial-gradient(circle, #ec4899 0%, transparent 70%);
+            animation-delay: -5s;
         }
 
-        .main-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-warm);
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(20px, 40px); }
         }
 
-        .card-body {
-            padding: 3rem;
+        /* Glass Navbar */
+        .navbar-custom {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: var(--border-glass);
+            height: 70px;
+        }
+        .navbar-brand { font-weight: 700; color: white !important; display: flex; align-items: center; gap: 10px; }
+        .brand-icon { background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-link { color: var(--text-muted) !important; transition: 0.3s; padding: 8px 16px; border-radius: 20px; }
+        .nav-link:hover { color: white !important; background: rgba(255,255,255,0.05); }
+
+        /* --- RESPONSIVE WRAPPER --- */
+        .main-wrapper {
+            width: 90%;
+            max-width: 1600px;
+            margin: 0 auto;
         }
 
-        /* Typography */
-        .card-title {
-            font-weight: 700;
-            font-size: 2.5rem;
-            background: var(--gradient-accent);
+        /* Main Glass Card */
+        .glass-card {
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            border: var(--border-glass);
+            border-radius: var(--radius-xl);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            padding: 3vw;
+            position: relative;
+            overflow: hidden;
+        }
+        .glass-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        }
+
+        .gradient-text {
+            background: var(--accent-gradient);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 2rem;
-            text-align: center;
+            font-weight: 800;
         }
 
-        /* File drop area with modern styling */
-        .file-drop-area {
-            border: 3px dashed var(--border-medium);
-            border-radius: 20px;
-            padding: 3rem 2rem;
-            text-align: center;
-            background: var(--bg-secondary);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .file-drop-area::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(245,158,11,0.1), transparent);
-            transition: left 0.6s;
-        }
-
-        .file-drop-area:hover {
-            border-color: var(--accent-primary);
-            background: rgba(245, 158, 11, 0.03);
-            transform: scale(1.02);
-            box-shadow: var(--shadow-warm);
-        }
-
-        .file-drop-area:hover::before {
-            left: 100%;
-        }
-
-        .file-drop-area.highlight {
-            border-color: var(--accent-primary);
-            background: rgba(245, 158, 11, 0.08);
-            box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
-        }
-
-        .file-drop-area i {
-            color: var(--accent-primary);
-            margin-bottom: 1rem;
-            filter: drop-shadow(0 4px 8px rgba(245,158,11,0.2));
-            transition: all 0.3s ease;
-        }
-
-        .file-drop-area:hover i {
-            transform: scale(1.1) rotate(5deg);
-        }
-
-        .file-drop-area p {
-            color: var(--text-secondary);
-            font-size: 1.1rem;
-            margin-bottom: 1.5rem;
-            font-weight: 500;
-        }
-
-        /* Modern button styling */
-        .btn-modern {
-            border-radius: 16px;
-            padding: 0.875rem 2rem;
-            font-weight: 600;
-            font-size: 1rem;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border: none;
-            position: relative;
-            overflow: hidden;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .btn-modern::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.6s;
-        }
-
-        .btn-modern:hover::before {
-            left: 100%;
-        }
-
-        .btn-primary-modern {
-            background: var(--gradient-accent);
-            color: white;
-        }
-
-        .btn-primary-modern:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-warm);
-        }
-
-        .btn-success-modern {
-            background: linear-gradient(135deg, var(--accent-success) 0%, #059669 100%);
-            color: white;
-        }
-
-        .btn-success-modern:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 20px rgba(16,185,129,0.25);
-        }
-
-        .btn-outline-modern {
-            background: var(--bg-card);
-            color: var(--text-primary);
-            border: 2px solid var(--border-medium);
-        }
-
-        .btn-outline-modern:hover {
-            border-color: var(--accent-primary);
-            background: rgba(245, 158, 11, 0.05);
-            transform: translateY(-1px);
-        }
-
-        /* File item styling */
-        .file-item {
-            margin-bottom: 1rem;
-            padding: 1.25rem;
-            border-radius: 16px;
-            background: var(--bg-card);
-            border: 2px solid var(--border-light);
-            transition: all 0.3s ease;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .file-item:hover {
-            border-color: var(--accent-primary);
-            box-shadow: var(--shadow-md);
-            transform: translateX(8px);
-        }
-
-        .file-item strong {
-            color: var(--text-primary);
-            font-weight: 600;
-        }
-
-        .file-size {
-            color: var(--text-muted);
-            font-size: 0.9rem;
-        }
-
-        .remove-file {
-            background: linear-gradient(135deg, var(--accent-danger) 0%, #dc2626 100%);
-            color: white;
-            border: none;
+        /* Drop Zone */
+        .drop-zone {
+            background: rgba(0, 0, 0, 0.2);
+            border: 2px dashed rgba(255,255,255,0.1);
             border-radius: 12px;
-            padding: 0.5rem 0.75rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .remove-file:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(239,68,68,0.3);
-        }
-
-        /* Progress styling */
-        .progress {
-            height: 8px;
-            border-radius: 20px;
-            background: var(--border-light);
-            overflow: hidden;
-        }
-
-        /* Alert styling */
-        .alert-modern {
-            border: none;
-            border-radius: 16px;
-            padding: 1.25rem;
-            background: var(--bg-card);
-            border-left: 4px solid var(--accent-info);
-            box-shadow: var(--shadow-sm);
-        }
-
-        /* Results section */
-        .results-header {
-            background: var(--gradient-card);
-            padding: 1.5rem;
-            border-radius: 16px;
-            margin-bottom: 1.5rem;
-            box-shadow: var(--shadow-sm);
-            border: 1px solid var(--border-light);
-        }
-
-        .result-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-light);
-            border-radius: 20px;
-            margin-bottom: 1.5rem;
-            overflow: hidden;
-            transition: all 0.3s ease;
-            box-shadow: var(--shadow-sm);
-            position: relative;
-        }
-
-        .result-card::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 4px;
-            background: var(--gradient-accent);
-        }
-
-        .result-card:hover {
-            box-shadow: var(--shadow-md);
-            transform: translateY(-2px);
-        }
-
-        .result-card .card-header {
-            background: rgba(245, 158, 11, 0.05);
-            border-bottom: 1px solid var(--border-light);
-            padding: 1.25rem;
-        }
-
-        .result-card .card-body {
-            padding: 2rem;
-        }
-
-        /* Input group styling */
-        .input-group {
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: var(--shadow-sm);
-            transition: all 0.3s ease;
-            margin-bottom: 1rem;
-        }
-
-        .input-group:focus-within {
-            box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
-        }
-
-        .input-group-text {
-            border: 2px solid var(--border-light);
-            border-right: none;
-            color: var(--text-secondary);
-            font-weight: 500;
-            font-size: 0.9rem;
-        }
-
-        .form-control, .form-select {
-            border: 2px solid var(--border-light);
-            border-left: none;
-            transition: all 0.3s ease;
-            font-size: 0.95rem;
-        }
-
-        .form-control:focus, .form-select:focus {
-            border-color: var(--accent-primary);
-            box-shadow: none;
-            outline: none;
-        }
-
-        /* Legend dots */
-        .legend-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .legend .low { background: linear-gradient(135deg, var(--accent-danger) 0%, #dc2626 100%); }
-        .legend .med { background: linear-gradient(135deg, var(--accent-warning) 0%, #d97706 100%); }
-        .legend .ok { background: linear-gradient(135deg, var(--accent-success) 0%, #004630 100%); }
-
-        /* Toolbar styling */
-        .toolbar {
-            background: var(--bg-secondary);
-            padding: 1rem;
-            border-radius: 12px;
-            margin-bottom: 1.5rem;
-        }
-
-        .toolbar .btn-sm {
-            border-radius: 10px;
-            padding: 0.5rem 1rem;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-
-        .toolbar .form-select-sm {
-            border-radius: 10px;
-            border: 2px solid var(--border-medium);
-        }
-
-        /* Status message styling */
-        #statusMessage {
-            color: var(--text-secondary);
-            font-weight: 500;
-            margin-top: 1rem;
+            padding: 3rem 1rem;
             text-align: center;
-        }
-
-        /* Hover animations */
-        .btn-modern:active {
-            transform: translateY(0) scale(0.98);
-        }
-
-        /* Responsive design */
-        @media (max-width: 768px) {
-            .card-body {
-                padding: 2rem 1.5rem;
-            }
-            
-            .card-title {
-                font-size: 2rem;
-            }
-            
-            .file-drop-area {
-                padding: 2rem 1rem;
-            }
-            
-            .main-container {
-                margin-top: 80px;
-            }
-        }
-
-        /* Loading animation */
-        @keyframes shimmer {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
-        }
-
-        .processing-shimmer::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            left: 0;
-            background: linear-gradient(90deg, transparent, rgba(245,158,11,0.1), transparent);
-            animation: shimmer 1.5s infinite;
-        }
-
-        /* Success and error states */
-        .success-icon { color: var(--accent-success); }
-        .error-icon { color: var(--accent-danger); }
-
-        /* Micro-interactions */
-        .interactive-element {
+            transition: 0.3s;
             cursor: pointer;
-            transition: all 0.2s ease;
         }
+        .drop-zone:hover, .drop-zone.highlight {
+            border-color: #6366f1;
+            background: rgba(99, 102, 241, 0.05);
+            transform: translateY(-2px);
+        }
+        .drop-icon { font-size: 3rem; color: #64748b; margin-bottom: 1rem; transition: 0.3s; }
+        .drop-zone:hover .drop-icon { color: #818cf8; transform: scale(1.1); }
 
-        .interactive-element:hover {
-            transform: scale(1.02);
+        /* Buttons */
+        .btn-glow {
+            background: var(--accent-gradient);
+            color: white; border: none; padding: 12px 30px; border-radius: 12px;
+            font-weight: 600; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4); transition: 0.3s;
         }
-
-        .interactive-element:active {
-            transform: scale(0.98);
-        }
-
-        .logo {
-            height: 48px;
-            width: auto;
-        }
-
-        /* Responsive behavior */
-        @media (max-width: 768px) {
-            .navbar-left {
-                gap: 1rem;
-            }
-            
-            .nav-links {
-                gap: 0.5rem;
-            }
-            
-            .nav-link {
-                font-size: 0.9rem;
-                padding: 0.4rem 0.8rem;
-            }
-            
-            .logo {
-                height: 40px;
-            }
-        }
+        .btn-glow:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(236, 72, 153, 0.5); color: white; }
+        .btn-glow:disabled { opacity: 0.6; filter: grayscale(1); }
         
-        @media (max-width: 576px) {
-            .nav-links {
-                flex-direction: column;
-                gap: 0.25rem;
-                position: absolute;
-                top: 100%;
-                left: 0;
-                right: 0;
-                background: rgba(255, 255, 255, 0.95);
-                backdrop-filter: blur(20px);
-                padding: 1rem;
-                border-top: 1px solid var(--border-light);
-                display: none;
-            }
-            
-            .navbar-left {
-                position: relative;
-            }
-            
-            /* You could add a hamburger menu toggle here if needed */
+        .btn-glass {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-main); border-radius: 8px; transition: 0.2s;
         }
+        .btn-glass:hover { background: rgba(255,255,255,0.1); color: white; border-color: rgba(255,255,255,0.3); }
+
+        /* File List */
+        .file-item {
+            background: rgba(255,255,255,0.03); border-radius: 10px; padding: 10px 15px;
+            border: 1px solid rgba(255,255,255,0.05); margin-bottom: 8px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        /* Results */
+        .result-card {
+            background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px; margin-bottom: 20px; overflow: hidden;
+        }
+        .result-header {
+            background: rgba(0,0,0,0.2); padding: 15px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        /* Inputs */
+        .form-control-dark {
+            background-color: #0f172a; border: 1px solid #334155; color: #f1f5f9;
+            border-radius: 8px; padding: 8px 12px; font-size: 0.95rem;
+        }
+        .form-control-dark:focus {
+            background-color: #0f172a; border-color: #818cf8; color: white;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2); outline: none;
+        }
+        .input-group-text-dark {
+            background-color: rgba(255,255,255,0.03); border: 1px solid #334155;
+            color: #94a3b8; min-width: 140px; border-right: none;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+        .logo { height: 45px; filter: brightness(0) invert(1); opacity: 0.8; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+
+        /* Progress Bar Customization */
+        .progress-custom {
+            height: 12px; /* Slightly taller */
+            background: rgba(255,255,255,0.1);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .progress-bar-custom {
+            background: var(--accent-gradient);
+            transition: width 0.6s ease;
+        }
+
+        /* --- Custom Beautiful Toggle --- */
+        .custom-toggle-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .custom-toggle-input { display: none; }
+        .custom-toggle-track {
+            width: 46px;
+            height: 24px;
+            background: rgba(15, 23, 42, 0.8); /* Dark Slate */
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            position: relative;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+        }
+        .custom-toggle-knob {
+            width: 18px;
+            height: 18px;
+            background: #94a3b8;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 3px;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        .custom-toggle-input:checked + .custom-toggle-track {
+            background: var(--accent-gradient);
+            border-color: rgba(255,255,255,0.1);
+        }
+        .custom-toggle-input:checked + .custom-toggle-track .custom-toggle-knob {
+            transform: translateX(22px);
+            background: white;
+            box-shadow: 0 0 10px rgba(255,255,255,0.8);
+        }
+        .toggle-label-text {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            transition: 0.3s;
+            font-weight: 500;
+        }
+        .custom-toggle-input:checked ~ .toggle-label-text {
+            color: white;
+            text-shadow: 0 0 15px rgba(99, 102, 241, 0.6);
+        }
+
+        /* --- FIXED: Visibility Control for Scores --- */
+        /* By default, hide confidence scores */
+        .conf-score { display: none; }
+        /* When container has .show-scores class, display them */
+        .show-scores .conf-score { display: block; animation: fadeIn 0.3s ease; }
+
     </style>
 </head>
 <body>
-    <!-- Top Navbar -->
+
     <nav class="navbar navbar-custom fixed-top">
-        <div class="container-fluid px-4">
-            <div class="navbar-left">
-                <span class="navbar-brand mb-0 h5">
-                    <i class="bi bi-receipt-cutoff"></i> 
-                    Invoice Parser
-                </span>
-                <div class="nav-links">
+        <div class="container-fluid px-lg-5">
+            <div class="d-flex align-items-center gap-4">
+                <a class="navbar-brand" href="#">
+                    <i class="bi bi-cpu-fill brand-icon"></i> Invoice Parser
+                </a>
+                <div class="d-none d-md-flex gap-1">
                     <a class="nav-link" href="/threeway">PO-Invoice Verification</a>
                     <a class="nav-link" href="/converse">Converse</a>
                 </div>
             </div>
-            <a href="https://adamastechconsulting.com/about-us/" 
-                   class="about-link"
-                   target="_blank" 
-                   rel="noopener noreferrer">
+            <a href="https://adamastechconsulting.com/about-us/" target="_blank">
                 <img class="logo" src="https://adamastech.in/wp-content/themes/atc-child/assets/images/atc-foot-logo.png" alt="ATC Logo">
             </a>
         </div>
     </nav>
 
-    <div class="container main-container">
+    <div class="main-wrapper">
         <div class="row justify-content-center">
-            <div class="col-lg-10 col-xl-9">
-                <div class="main-card">
-                    <div class="card-body">
-                        <h2 class="card-title">PDF Invoice Parser</h2>
+            <div class="col-12">
+                
+                <div class="glass-card mb-5 animate-fade-in">
+                    <div class="text-center mb-5">
+                        <h1 class="display-5 fw-bold mb-2"><span class="gradient-text">PDF Invoice Intelligence</span></h1>
+                        <p class="text-white fs-5">Extract structured data from documents instantly.</p>
+                    </div>
+
+                    <div class="drop-zone mb-4" id="dropArea">
+                        <i class="bi bi-cloud-arrow-up-fill drop-icon"></i>
+                        <h5 class="fw-bold text-light">Drop Files Here</h5>
+                        <p class="text-white small mb-3">Drag & drop PDF files here or click to browse</p>
+                        <input type="file" id="fileInput" multiple accept=".pdf" class="d-none">
+                        <button class="btn btn-glass px-4 rounded-pill" id="browseButton">
+                            <i class="bi bi-search me-2"></i>Browse Files
+                        </button>
+                    </div>
+
+                    <div id="fileList" class="mb-4"></div>
+
+                    <div class="d-grid gap-2 mb-3">
+                        <button class="btn btn-glow py-3 fs-5" id="uploadButton" disabled>
+                            Process
+                        </button>
+                    </div>
+
+                    <div id="uploadProgress" style="display: none;" class="mt-4">
+                        <div class="d-flex justify-content-between mb-2 small">
+                            <span class="text-info fw-bold" id="statusTitle">Processing...</span>
+                            <span class="text-white" id="statusPercent">0%</span>
+                        </div>
                         
-                        <!-- File Upload Section -->
-                        <div class="file-drop-area mb-4" id="dropArea">
+                        <div class="progress progress-custom">
+                            <div id="mainProgressBar" class="progress-bar progress-bar-custom" style="width: 0%;"></div>
+                        </div>
+                        
+                        <p id="statusMessage" class="text-center text-white small mt-2 opacity-75"></p>
+                    </div>
+
+                    <div id="jobIdContainer" style="display: none" class="mt-4 p-3 rounded bg-dark border border-secondary">
+                        <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <i class="bi bi-cloud-arrow-up-fill fs-1"></i>
-                                <p>Drag & drop PDF files here or click to browse</p>
-                                <input type="file" id="fileInput" multiple accept=".pdf" class="d-none">
-                                <button class="btn btn-modern btn-primary-modern" id="browseButton">
-                                    <i class="bi bi-folder2-open me-2"></i>Browse Files
-                                </button>
+                                <span class="text-white small text-uppercase fw-bold me-2">Job ID</span>
+                                <span id="jobId" class="font-monospace text-info"></span>
                             </div>
-                        </div>
-                        
-                        <!-- Selected Files List -->
-                        <div id="fileList" class="mb-4"></div>
-                        
-                        <!-- Upload Button -->
-                        <div class="d-grid gap-2 mb-4">
-                            <button class="btn btn-modern btn-success-modern" id="uploadButton" disabled>
-                                <i class="bi bi-upload me-2"></i>Upload & Process Files
-                            </button>
-                        </div>
-                        
-                        <!-- Progress Bar -->
-                        <div class="mt-4" id="uploadProgress" style="display: none;">
-                            <div class="progress mb-3">
-                                <div class="progress-bar progress-bar-striped progress-bar-animated" 
-                                     role="progressbar" style="width: 100%"></div>
-                            </div>
-                            <p id="statusMessage">Processing your files...</p>
-                        </div>
-                        
-                        <!-- Job ID Display -->
-                        <div class="alert alert-modern" id="jobIdContainer" style="display: none">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <strong>Job ID:</strong> <span id="jobId" class="font-monospace"></span>
-                                </div>
-                                <button class="btn btn-sm btn-outline-modern" id="copyJobId">
-                                    <i class="bi bi-clipboard me-1"></i>Copy
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <!-- Results Section -->
-                        <div id="resultsContainer" class="mt-5" style="display: none">
-                            <div class="results-header">
-                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
-                                    <div class="d-flex align-items-center gap-3">
-                                        <h4 class="m-0 fw-bold">
-                                            <i class="bi bi-check-circle-fill text-success me-2"></i>Results
-                                        </h4>
-                                        <div class="legend small text-muted">
-                                            <span class="legend-dot low"></span><span class="me-3">Low confidence</span>
-                                            <span class="legend-dot med"></span><span class="me-3">Medium confidence</span>
-                                            <span class="legend-dot ok"></span><span>High confidence</span>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <label for="viewMode" class="form-label m-0 fw-medium">View</label>
-                                            <select id="viewMode" class="form-select form-select-sm">
-                                                <option value="values" selected>Values only</option>
-                                                <option value="values_conf">Values + confidence</option>
-                                            </select>
-                                        </div>
-                                        <button id="expandAll" class="btn btn-sm btn-outline-modern" title="Expand all">
-                                            <i class="bi bi-arrows-expand"></i>
-                                        </button>
-                                        <button id="collapseAll" class="btn btn-sm btn-outline-modern" title="Collapse all">
-                                            <i class="bi bi-arrows-collapse"></i>
-                                        </button>
-                                        <!-- <button id="copyAll" class="btn btn-sm btn-outline-modern" title="Copy all JSON">
-                                            <i class="bi bi-clipboard"></i>
-                                        </button>
-                                        <button id="downloadAll" class="btn btn-sm btn-modern btn-primary-modern" title="Download all JSON">
-                                            <i class="bi bi-download me-1"></i>Download
-                                        </button> -->
-                                    </div>
-                                </div>
-                            </div>
-                            <div id="resultsContent"></div>
+                            <button class="btn btn-sm btn-outline-light rounded-circle" id="copyJobId"><i class="bi bi-copy"></i></button>
                         </div>
                     </div>
                 </div>
+
+                <div id="resultsContainer" style="display: none">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 px-2">
+                        <h3 class="fw-bold m-0 text-white"><i class="bi bi-grid-1x2-fill me-2 text-info"></i>Results</h3>
+                        <div class="d-flex gap-2 mt-2 mt-md-0 align-items-center">
+                            
+                            <label class="custom-toggle-wrapper border-end border-secondary pe-3 me-2">
+                                <input type="checkbox" id="toggleConfidence" class="custom-toggle-input">
+                                <div class="custom-toggle-track">
+                                    <div class="custom-toggle-knob"></div>
+                                </div>
+                                <span class="toggle-label-text">Show Scores</span>
+                            </label>
+
+                            <button id="expandAll" class="btn btn-sm btn-glass" title="Expand"><i class="bi bi-arrows-angle-expand"></i></button>
+                            <button id="collapseAll" class="btn btn-sm btn-glass" title="Collapse"><i class="bi bi-arrows-angle-contract"></i></button>
+                            <button id="downloadAll" class="btn btn-sm btn-glow py-1 px-3"><i class="bi bi-download"></i> All JSON</button>
+                        </div>
+                    </div>
+                    
+                    <div id="resultsContent"></div>
+                    
+                    <div class="text-center text-white small py-5">
+                        <span class="opacity-50">Powered by Adamas Tech Consulting &copy; 2026</span>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
-    
 
     <script>
         $(document).ready(function() {
-            // Variables
+            // --- State Management ---
             let selectedFiles = [];
-            let currentJobId = null;
             let pollingInterval = false;
-            let showConfidence = false; // controls value-only vs value+confidence view
-            let lastResults = null;     // cache last results to re-render on toggle
-            window.LOCAL_FILE_URLS = {}; // filename -> object URL for locally selected files
-            
-            // Dark theme toggle removed
-            
-            // Connect file input to browse button
-            $("#browseButton").click(function() {
-                $("#fileInput").click();
-            });
-            
-            // Handle file selection
-            $("#fileInput").change(function(e) {
-                handleFiles(e.target.files);
-            });
-            
-            // Drag and drop functionality
+            // NOTE: showConfidence boolean is no longer needed for rendering logic, only visual toggling
+            let lastResults = null;
+            window.LOCAL_FILE_URLS = {};
+
+            // --- UI Interaction ---
+            $("#browseButton").click(() => $("#fileInput").click());
+            $("#fileInput").change((e) => handleFiles(e.target.files));
+
+            // Drag & Drop
             const dropArea = document.getElementById('dropArea');
-            
-            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-                dropArea.addEventListener(eventName, preventDefaults, false);
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => {
+                dropArea.addEventListener(evt, (e) => { e.preventDefault(); e.stopPropagation(); });
             });
-            
-            function preventDefaults(e) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-            
-            ['dragenter', 'dragover'].forEach(eventName => {
-                dropArea.addEventListener(eventName, highlight, false);
-            });
-            
-            ['dragleave', 'drop'].forEach(eventName => {
-                dropArea.addEventListener(eventName, unhighlight, false);
-            });
-            
-            function highlight() {
-                dropArea.classList.add('highlight');
-            }
-            
-            function unhighlight() {
-                dropArea.classList.remove('highlight');
-            }
-            
-            dropArea.addEventListener('drop', function(e) {
-                const dt = e.dataTransfer;
-                const files = dt.files;
-                handleFiles(files);
-            }, false);
-            
-            // Process selected files
+            ['dragenter', 'dragover'].forEach(() => dropArea.classList.add('highlight'));
+            ['dragleave', 'drop'].forEach(() => dropArea.classList.remove('highlight'));
+            dropArea.addEventListener('drop', (e) => handleFiles(e.dataTransfer.files));
+
             function handleFiles(files) {
                 const pdfFiles = Array.from(files).filter(file => file.type === 'application/pdf');
+                if (pdfFiles.length === 0) { alert("Only PDF files are allowed."); return; }
                 
-                if (pdfFiles.length === 0) {
-                    alert("Please select PDF files only.");
-                    return;
-                }
-                
-                // Revoke any previous object URLs
-                try {
-                    Object.values(window.LOCAL_FILE_URLS || {}).forEach(url => URL.revokeObjectURL(url));
-                } catch (e) {}
+                Object.values(window.LOCAL_FILE_URLS).forEach(url => URL.revokeObjectURL(url));
                 window.LOCAL_FILE_URLS = {};
-
-                // Create object URLs for local preview/open
-                pdfFiles.forEach(f => {
-                    try { window.LOCAL_FILE_URLS[f.name] = URL.createObjectURL(f); } catch (e) {}
-                });
-
+                
+                pdfFiles.forEach(f => window.LOCAL_FILE_URLS[f.name] = URL.createObjectURL(f));
                 selectedFiles = pdfFiles;
-                updateFileList();
-                $("#uploadButton").prop("disabled", selectedFiles.length === 0);
+                renderFileList();
+                $("#uploadButton").prop("disabled", false);
             }
-            // Revoke object URLs on unload
-            window.addEventListener('beforeunload', () => {
-                try {
-                    Object.values(window.LOCAL_FILE_URLS || {}).forEach(url => URL.revokeObjectURL(url));
-                } catch (e) {}
-            });
-            
-            // Update file list display
-            function updateFileList() {
-                const fileList = $("#fileList");
-                fileList.empty();
-                
-                if (selectedFiles.length === 0) {
-                    fileList.html("<p class='text-muted'>No files selected</p>");
-                    return;
-                }
-                
-                selectedFiles.forEach((file, index) => {
-                    const fileSize = formatFileSize(file.size);
-                    const fileItem = $(`
-                        <div class="file-item d-flex justify-content-between align-items-center">
-                            <div>
-                                <strong>${file.name}</strong> (${fileSize})
+
+            function renderFileList() {
+                const $list = $("#fileList").empty();
+                selectedFiles.forEach((file, idx) => {
+                    const size = (file.size / 1024 / 1024).toFixed(2) + ' MB';
+                    $list.append(`
+                        <div class="file-item animate-fade-in">
+                            <div class="d-flex align-items-center gap-3">
+                                <i class="bi bi-file-earmark-pdf text-danger fs-5"></i>
+                                <div><div class="text-white fw-medium">${file.name}</div><div class="small text-white">${size}</div></div>
                             </div>
-                            <button class="btn btn-sm btn-outline-danger remove-file" data-index="${index}">
-                                &times;
-                            </button>
+                            <button class="btn btn-sm text-secondary hover-danger remove-file" data-idx="${idx}"><i class="bi bi-x-lg"></i></button>
                         </div>
                     `);
-                    fileList.append(fileItem);
                 });
-                
-                // Add event listeners for remove buttons
                 $(".remove-file").click(function() {
-                    const index = $(this).data("index");
-                    selectedFiles.splice(index, 1);
-                    updateFileList();
-                    $("#uploadButton").prop("disabled", selectedFiles.length === 0);
+                    selectedFiles.splice($(this).data('idx'), 1);
+                    renderFileList();
+                    if(selectedFiles.length === 0) $("#uploadButton").prop("disabled", true);
                 });
             }
-            
-            // Format file size
-            function formatFileSize(bytes) {
-                if (bytes < 1024) return bytes + " bytes";
-                else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
-                else return (bytes / 1048576).toFixed(1) + " MB";
-            }
-            
-            // Handle file upload
+
+            // --- Upload & Process ---
             $("#uploadButton").click(function() {
                 if (selectedFiles.length === 0) return;
-                
-                // Create form data
+                const totalFiles = selectedFiles.length;
                 const formData = new FormData();
-                selectedFiles.forEach(file => {
-                    formData.append("files", file);
-                });
-                
-                // Show progress
-                $("#uploadProgress").show();
-                $("#statusMessage").text("Uploading files...");
-                $("#uploadButton").prop("disabled", true);
-                
-                // Make AJAX request
-                $.ajax({
-                    url: "/upload",
-                    type: "POST",
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function(response) {
-                        // Show job ID
-                        // debugger
-                        if (!response.success){
-                            alert(response.msg)
-                            resultsContainer.show();
-                            $("#uploadButton").prop("disabled", false);
-                            return
+                selectedFiles.forEach(f => formData.append("files", f));
 
-                        }
-                        $("#jobId").text(response['job_id'] || response['payload'] || '');
-                        $("#jobIdContainer").show();
+                $("#uploadProgress").fadeIn();
+                $("#statusTitle").text("Initializing Upload...");
+                $("#statusPercent").text("0%");
+                $("#mainProgressBar").css("width", "5%");
+                
+                $(this).prop("disabled", true).addClass('opacity-50');
+
+                $.ajax({
+                    url: "/upload", type: "POST", data: formData,
+                    processData: false, contentType: false,
+                    success: (res) => {
+                        if(!res.success) { alert(res.msg); resetUI(); return; }
+                        $("#jobId").text(res.job_id || res.payload);
+                        $("#jobIdContainer").fadeIn();
                         
-                        // Show upload results
-                        $("#statusMessage").text("Files uploaded successfully. Processing...");
-                        console.log('startPolling')
-                        // Start polling for results
-                        startPolling(response['payload']);
+                        $("#statusTitle").text("AI Processing...");
+                        $("#statusMessage").text("Extracting entities, validating totals...");
+                        $("#mainProgressBar").css("width", "15%");
+                        startPolling(res.payload, totalFiles);
                     },
-                    error: function(xhr, status, error) {
-                        $("#statusMessage").text("Error: " + (xhr.responseJSON?.error || error));
-                        $("#uploadProgress .progress-bar").addClass("bg-danger");
+                    error: () => {
+                        $("#statusTitle").text("Upload Failed").addClass("text-danger");
+                        resetUI();
                     }
                 });
             });
-            
-            // Copy job ID to clipboard
+
             $("#copyJobId").click(function() {
-                const jobId = $("#jobId").text();
-                navigator.clipboard.writeText(jobId).then(function() {
-                    const originalText = $("#copyJobId").text();
-                    $("#copyJobId").text("Copied!");
-                    setTimeout(function() {
-                        $("#copyJobId").text(originalText);
-                    }, 2000);
-                });
-            });
-
-            // Poll for results
-             
-            function startPolling(payload) {
-                if (pollingInterval) clearInterval(pollingInterval);
-                checkResults(payload);
-                pollingInterval = setInterval(function() {
-                    checkResults(payload);
-                }, 3000); // Poll every 3 seconds
-            }
-            
-            // Check for results
-            function checkResults(payload) {
-                // Create form data
-                const formData = new FormData();
-                formData.append("payload", payload);
-                
-                // Make AJAX request
-                $.ajax({
-                    url: "/result",
-                    type: "POST",
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function(response) {
-                        if (response.statusCode != 200) {
-                            // Still processing, continue polling
-                            $("#statusMessage").text(response.message);
-
-                            return false;
-                        }
-                        console.log("Ajax response...")
-                        console.log(response)
-                        // Results are ready
-                        clearInterval(pollingInterval);
-                        $("#statusMessage").text("Processing complete!");
-                        $("#uploadProgress .progress-bar").removeClass("progress-bar-animated").addClass("bg-success");
-                        
-                        // Display results
-                        console.log("Response:", response);
-                        lastResults = response;
-                        displayResultsForm(response);
-                        return true
-                    },
-                    error: function(xhr, status, error) {
-                        $("#statusMessage").text("Error retrieving results: " + (xhr.responseJSON?.error || error));
-                        $("#uploadProgress .progress-bar").addClass("bg-danger");
-                        clearInterval(pollingInterval);
-                    }
-                });
-            }
-            
-            // Display results
-            function displayResults(results) {
-                const resultsContainer = $("#resultsContainer");
-                const resultsContent = $("#resultsContent");
-                resultsContent.empty();
-
-                if (!results || !results.data || results.data.length === 0) {
-                    resultsContent.html("<p class='text-muted'>No results available</p>");
-                    resultsContainer.show();
-                    return;
-                }
-
-                const confidenceThreshold = 0.97; // Threshold for yellow color
-                const errorThreshold = 0.9; // Threshold for red color
-
-                // Recursive JSON → HTML converter
-                function jsonToHtml(obj, indent = 0) {
-                    const pad = " ".repeat(indent * 4); // spaces for indentation
-                    let html = "";
-
-                    if (Array.isArray(obj)) {
-                        html += "[\n";
-                        obj.forEach((item, idx) => {
-                            html += pad + "    " + jsonToHtml(item, indent + 1) + (idx < obj.length - 1 ? "," : "") + "\n";
-                        });
-                        html += pad + "]";
-                    } 
-                    else if (typeof obj === 'object' && obj !== null) {
-                        html += "{\n";
-                        const keys = Object.keys(obj);
-                        keys.forEach((key, idx) => {
-                            let displayKey = key;
-                            const value = obj[key];
-
-                            // Check confidence value
-                            if (value && value.value && Array.isArray(value.value)) {
-                                let conf = parseFloat(value.value[1]);
-                                if (!isNaN(conf) && conf < confidenceThreshold && conf > errorThreshold) {
-                                    displayKey = `<span style="color:orange">${key}</span>`;
-                                }
-                                else if (!isNaN(conf) && conf < errorThreshold && conf > 0) {
-                                    displayKey = `<span style="color:red">${key}</span>`;
-                                }
-                            }
-
-                            html += pad + "    \"" + displayKey + "\": " + jsonToHtml(value, indent + 1);
-                            if (idx < keys.length - 1) html += ",";
-                            html += "\n";
-                        });
-                        html += pad + "}";
-                    } 
-                    else {
-                        html += JSON.stringify(obj);
-                    }
-                    return html;
-                }
-
-                results.data.forEach(item => {
-                    if (!item.json_response) return;
-
-                    try {
-                        const parsed = typeof item.json_response === 'string'
-                            ? JSON.parse(item.json_response)
-                            : item.json_response;
-
-                        const prettyHtml = jsonToHtml(parsed);
-
-                        const resultCard = $(`
-                            <div class="card result-card mb-3">
-                                <div class="card-header bg-light">
-                                    <strong>File:</strong> ${item.filename || 'Unknown file'}
-                                </div>
-                                <div class="card-body">
-                                    <div class="result-json" style="white-space: pre; font-family: monospace;">${prettyHtml}</div>
-                                </div>
-                            </div>
-                        `);
-
-                        resultsContent.append(resultCard);
-                    } catch (error) {
-                        console.error("Error parsing JSON response:", error);
-                        resultsContent.append(`
-                            <div class="alert alert-warning">
-                                Error parsing results for ${item.filename || 'Unknown file'}
-                            </div>
-                        `);
-                    }
-                });
-
-                resultsContainer.show();
-                $("#uploadButton").prop("disabled", false);
-            }
-
-            // View mode toggle
-            $(document).on('change', '#viewMode', function() {
-                const mode = $(this).val();
-                showConfidence = (mode === 'values_conf');
-                if (lastResults) {
-                    displayResultsForm(lastResults);
-                }
-            });
-
-            // Expand/Collapse All
-            $(document).on('click', '#expandAll', function() {
-                $('.result-card .card-body').removeClass('d-none');
-                $('.result-card .toggle-card i').removeClass('bi-chevron-down').addClass('bi-chevron-up');
-            });
-            $(document).on('click', '#collapseAll', function() {
-                $('.result-card .card-body').addClass('d-none');
-                $('.result-card .toggle-card i').removeClass('bi-chevron-up').addClass('bi-chevron-down');
-            });
-
-            // Copy/Download All
-            function collectAllEdited() {
-                const all = {};
-                $('#resultsContent .result-card').each(function() {
-                    const card = $(this);
-                    const fname = card.data('filename') || 'result';
-                    const edited = collectEditedJson(card.find('.card-body'));
-                    all[fname] = edited;
-                });
-                return all;
-            }
-            $(document).on('click', '#copyAll', function() {
-                const all = collectAllEdited();
-                const text = JSON.stringify(all, null, 2);
+                const text = $("#jobId").text();
+                if (!text) return;
                 navigator.clipboard.writeText(text).then(() => {
-                    const btn = $(this);
-                    const original = btn.html();
-                    btn.html('<i class="bi bi-clipboard-check"></i>');
-                    setTimeout(() => btn.html(original), 1200);
+                    const $icon = $(this).find("i");
+                    $icon.removeClass("bi-copy").addClass("bi-check-lg");
+                    setTimeout(() => $icon.removeClass("bi-check-lg").addClass("bi-copy"), 2000);
                 });
             });
-            $(document).on('click', '#downloadAll', function() {
-                const all = collectAllEdited();
-                const blob = new Blob([JSON.stringify(all, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'results.json';
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                URL.revokeObjectURL(url);
-            });
 
-            // New: Display results as editable input fields with copy/download
-            function displayResultsForm(results) {
-                const resultsContainer = $("#resultsContainer");
-                const resultsContent = $("#resultsContent");
-                resultsContent.empty();
+            function startPolling(payload, totalFiles) {
+                if (pollingInterval) clearInterval(pollingInterval);
+                let fakeProgress = 15;
 
-                if (!results || !results.data || results.data.length === 0) {
-                    resultsContent.html("<p class='text-muted'>No results available</p>");
-                    resultsContainer.show();
-                    return;
-                }
-
-                function escapeHtml(str) {
-                    return String(str)
-                        .replace(/&/g, '&amp;')
-                        .replace(/</g, '&lt;')
-                        .replace(/>/g, '&gt;')
-                        .replace(/\"/g, '&quot;')
-                        .replace(/'/g, '&#039;');
-                }
-
-                function parseConfidence(confRaw) {
-                    if (confRaw === undefined || confRaw === null) return null;
-                    if (typeof confRaw === 'number') return confRaw === 0 ? null : confRaw;
-                    const s = String(confRaw).trim().toUpperCase();
-                    if (!s || s === 'NA' || s === 'N/A' || s === 'NONE' || s === '-') return null;
-                    const n = parseFloat(s);
-                    if (!isNaN(n)) {
-                        if (n === 0) return null; // ignore 0
-                        return n;
-                    }
-                    return null;
-                }
-
-                function colorForConfidence(confNum) {
-                    if (confNum === null) return '';
-                    if (confNum < 0.9) return 'red';
-                    if (confNum < 0.97) return 'orange';
-                    return '';
-                }
-
-                function getFileUrl(item) {
-                    if (!item) return null;
-                    const direct = item.file_url || item.url || item.pdf_url || item.view_url || item.signed_url;
-                    if (direct) return direct;
-                    if (window.LOCAL_FILE_URLS && item.filename && window.LOCAL_FILE_URLS[item.filename]) {
-                        return window.LOCAL_FILE_URLS[item.filename];
-                    }
-                    if (window.FILE_BASE_URL && item.filename) {
-                        const base = String(window.FILE_BASE_URL).replace(/\/$/, '');
-                        return base + '/' + encodeURIComponent(item.filename);
-                    }
-                    return null;
-                }
-
-                function jsonToForm(obj, path = '') {
-                    const container = $('<div class="ms-2"></div>');
-                    if (Array.isArray(obj)) {
-                        obj.forEach((item, idx) => {
-                            const itemPath = path + '[' + idx + ']';
-                            const group = $(`
-                                <div class="mb-2 p-2 border rounded">
-                                    <div class="text-muted small mb-1">[${idx+1}]</div>
-                                </div>
-                            `);
-                            group.append(jsonToForm(item, itemPath));
-                            container.append(group);
-                        });
-                        return container;
-                    }
-                    if (obj && typeof obj === 'object') {
-                        Object.keys(obj).forEach((key) => {
-                            const value = obj[key];
-                            const fieldPath = path ? path + '.' + key : key;
-                            const row = $('<div class="mb-2"></div>');
-
-                            // Special handling: objects in the form { value: [val, conf] } or { value: val }
-                            const isValueWrapper = value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 1 && Object.prototype.hasOwnProperty.call(value, 'value');
-                            if (isValueWrapper) {
-                                const inner = value.value;
-                                let valPart = inner;
-                                let confPart = undefined;
-                                if (Array.isArray(inner)) {
-                                    valPart = inner[0];
-                                    confPart = inner.length > 1 ? inner[1] : undefined;
-                                }
-                                const confNum = parseConfidence(confPart);
-                                const color = colorForConfidence(confNum);
-                                const type = (typeof valPart === 'number') ? 'number' : (typeof valPart === 'boolean' ? 'checkbox' : 'text');
-                                const inputWrapper = $('<div class="input-group"></div>');
-                                const label = $(`<span class="input-group-text" style="min-width: 180px">${escapeHtml(key)}</span>`);
-                                if (color) label.css('color', color);
-                                let input;
-                                if (type === 'checkbox') {
-                                    input = $('<input class="form-check-input ms-2" type="checkbox">');
-                                    if (valPart) input.prop('checked', true);
-                                } else {
-                                    input = $(`<input class="form-control" type="${type}">`);
-                                    input.val(valPart === null ? '' : valPart);
-                                }
-                                input.attr('data-path', fieldPath);
-                                input.attr('data-type', (valPart === null) ? 'null' : typeof valPart);
-                                if (confPart !== undefined) input.attr('data-conf', confPart);
-                                inputWrapper.append(label).append(input);
-                                if (showConfidence && confNum !== null) {
-                                    const confPct = Math.round(confNum * 100);
-                                    inputWrapper.append(`<span class="input-group-text bg-light">${confPct}%</span>`);
-                                }
-                                row.append(inputWrapper);
-                                container.append(row);
-                                return; // continue next key
-                            }
-
-                            // Recurse for other objects/arrays
-                            if (value && typeof value === 'object' && !Array.isArray(value)) {
-                                row.append(`<label class="form-label fw-semibold">${escapeHtml(key)}</label>`);
-                                row.append(jsonToForm(value, fieldPath));
-                            } else if (Array.isArray(value)) {
-                                row.append(`<label class="form-label fw-semibold">${escapeHtml(key)}</label>`);
-                                row.append(jsonToForm(value, fieldPath));
+                const poll = () => {
+                    const formData = new FormData();
+                    formData.append("payload", payload);
+                    $.ajax({
+                        url: "/result", type: "POST", data: formData,
+                        processData: false, contentType: false,
+                        success: (res) => {
+                            if (res.statusCode == 200) {
+                                clearInterval(pollingInterval);
+                                $("#statusTitle").text("Complete").removeClass("text-info").addClass("text-success");
+                                $("#statusMessage").text("Rendered below.");
+                                $("#statusPercent").text("100%");
+                                $("#mainProgressBar").css("width", "100%").addClass("bg-success");
+                                
+                                lastResults = res;
+                                renderResults(res);
                             } else {
-                                const type = (typeof value === 'number') ? 'number' : (typeof value === 'boolean' ? 'checkbox' : 'text');
-                                const inputWrapper = $('<div class="input-group"></div>');
-                                const label = $(`<span class="input-group-text" style="min-width: 180px">${escapeHtml(key)}</span>`);
-                                let input;
-                                if (type === 'checkbox') {
-                                    input = $('<input class="form-check-input ms-2" type="checkbox">');
-                                    if (value) input.prop('checked', true);
+                                if (res.completed_count !== undefined) {
+                                    const pct = Math.round((res.completed_count / totalFiles) * 100);
+                                    $("#mainProgressBar").css("width", pct + "%");
+                                    $("#statusPercent").text(pct + "%");
                                 } else {
-                                    input = $(`<input class="form-control" type="${type}">`);
-                                    input.val(value === null ? '' : value);
+                                    fakeProgress = Math.min(fakeProgress + 2, 90);
+                                    $("#mainProgressBar").css("width", fakeProgress + "%");
+                                    $("#statusPercent").text(fakeProgress + "%");
                                 }
-                                input.attr('data-path', fieldPath);
-                                input.attr('data-type', (value === null) ? 'null' : typeof value);
-                                inputWrapper.append(label).append(input);
-                                row.append(inputWrapper);
                             }
-                            container.append(row);
-                        });
-                        return container;
-                    }
-
-                    // Primitive
-                    const input = $('<input class="form-control mb-2" type="text">');
-                    input.val(obj === null ? '' : obj);
-                    input.attr('data-path', path);
-                    input.attr('data-type', (obj === null) ? 'null' : typeof obj);
-                    container.append(input);
-                    return container;
-                }
-
-                function setByPath(root, path, value) {
-                    const tokens = [];
-                    const re = /([^.\[\]]+)|(\[(\d+)\])/g;
-                    let m;
-                    while ((m = re.exec(path)) !== null) {
-                        if (m[1]) tokens.push(m[1]);
-                        if (m[3]) tokens.push(Number(m[3]));
-                    }
-                    let cur = root;
-                    for (let i = 0; i < tokens.length; i++) {
-                        const t = tokens[i];
-                        const next = tokens[i + 1];
-                        const isLast = i === tokens.length - 1;
-                        if (isLast) {
-                            cur[t] = value;
-                        } else {
-                            if (typeof next === 'number') {
-                                if (!Array.isArray(cur[t])) cur[t] = [];
-                            } else {
-                                if (typeof cur[t] !== 'object' || cur[t] === null || Array.isArray(cur[t])) cur[t] = {};
-                            }
-                            cur = cur[t];
-                        }
-                    }
-                }
-
-                function collectEditedJson(cardBody) {
-                    let root = {};
-                    cardBody.find('[data-path]').each(function() {
-                        const el = $(this);
-                        const path = el.data('path');
-                        const type = el.data('type');
-                        const conf = el.data('conf');
-                        let val;
-                        if (type === 'boolean') {
-                            val = el.is(':checked');
-                        } else if (type === 'number') {
-                            const n = parseFloat(el.val());
-                            val = isNaN(n) ? null : n;
-                        } else if (type === 'null') {
-                            val = (el.val() === '') ? null : el.val();
-                        } else {
-                            val = el.val();
-                        }
-                        // If confidence is associated, keep it in an array [value, conf], else just the value
-                        if (conf !== undefined) {
-                            setByPath(root, path, [val, String(conf)]);
-                        } else {
-                            setByPath(root, path, val);
                         }
                     });
-                    return root;
-                }
-
-                results.data.forEach(item => {
-                    if (!item.json_response) return;
-                    try {
-                        const parsed = typeof item.json_response === 'string'
-                            ? JSON.parse(item.json_response)
-                            : item.json_response;
-                        delete parsed.overall_conf; // remove overall_conf if present
-
-                        const formEl = jsonToForm(parsed);
-                        const fileUrl = getFileUrl(item);
-                        const fileNameSafe = escapeHtml(item.filename || 'Unknown file');
-                        const fileLabelHtml = fileUrl
-                            ? `<a href="${fileUrl}" target="_blank" rel="noopener noreferrer">${fileNameSafe}</a>`
-                            : fileNameSafe;
-                        const resultCard = $(`
-                            <div class="card result-card mb-3">
-                                <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <button class="btn btn-sm btn-outline-secondary toggle-card" title="Collapse/expand"><i class="bi bi-chevron-up"></i></button>
-                                        <div><strong>File:</strong> ${fileLabelHtml}</div>
-                                    </div>
-                                    <div class="btn-group">
-                                        <button class="btn btn-sm btn-outline-secondary copy-json">Copy JSON</button>
-                                        <button class="btn btn-sm btn-outline-primary download-json">Download JSON</button>
-                                    </div>
-                                </div>
-                                <div class="card-body"></div>
-                            </div>
-                        `);
-
-                        const cardBody = resultCard.find('.card-body');
-                        cardBody.append(formEl);
-                        resultCard.attr('data-filename', item.filename || 'result');
-
-                        // Per-card collapse
-                        resultCard.find('.toggle-card').on('click', function() {
-                            cardBody.toggleClass('d-none');
-                            const icon = $(this).find('i');
-                            icon.toggleClass('bi-chevron-up bi-chevron-down');
-                        });
-
-                        resultCard.find('.copy-json').on('click', function() {
-                            const edited = collectEditedJson(cardBody);
-                            const text = JSON.stringify(edited, null, 2);
-                            navigator.clipboard.writeText(text).then(() => {
-                                const btn = $(this);
-                                const original = btn.text();
-                                btn.text('Copied!');
-                                setTimeout(() => btn.text(original), 1500);
-                            });
-                        });
-                        resultCard.find('.download-json').on('click', function() {
-                            const edited = collectEditedJson(cardBody);
-                            const blob = new Blob([JSON.stringify(edited, null, 2)], { type: 'application/json' });
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = (item.filename ? item.filename.replace(/\.[^.]+$/, '') : 'result') + '.json';
-                            document.body.appendChild(a);
-                            a.click();
-                            a.remove();
-                            URL.revokeObjectURL(url);
-                        });
-
-                        resultsContent.append(resultCard);
-                    } catch (error) {
-                        console.error("Error parsing JSON response:", error);
-                        resultsContent.append(`
-                            <div class="alert alert-warning">
-                                Error parsing results for ${item.filename || 'Unknown file'}
-                            </div>
-                        `);
-                    }
-                });
-
-                resultsContainer.show();
-                $("#uploadButton").prop("disabled", false);
+                };
+                poll();
+                pollingInterval = setInterval(poll, 3000);
             }
 
-            // Initialize the page
-            updateFileList();
+            // --- Results Rendering ---
+            
+            // CHANGED: Instead of re-rendering everything, just toggle a CSS class on the container
+            $("#toggleConfidence").change(function() {
+                const isChecked = $(this).is(':checked');
+                // We toggle a class "show-scores" on the results container.
+                // CSS handles the display:block/none of the score badges.
+                $("#resultsContent").toggleClass("show-scores", isChecked);
+            });
+
+            function renderResults(res) {
+                const $cont = $("#resultsContent").empty();
+                $("#resultsContainer").fadeIn();
+                $("#uploadButton").prop("disabled", false).removeClass('opacity-50');
+
+                // Check toggle state on load to set initial class
+                if ($("#toggleConfidence").is(':checked')) {
+                    $cont.addClass("show-scores");
+                } else {
+                    $cont.removeClass("show-scores");
+                }
+
+                if (!res.data || res.data.length === 0) {
+                    $cont.html('<div class="text-center text-white">No data found.</div>'); return;
+                }
+
+                res.data.forEach(item => {
+                    let data = item.json_response;
+                    if (typeof data === 'string') try { data = JSON.parse(data); delete data.overall_conf; } catch(e){}
+                    
+                    let fileUrl = item.file_url || window.LOCAL_FILE_URLS[item.filename] || "#";
+                    let fileName = item.filename || "Unknown Document";
+                    
+                    const $card = $(`
+                        <div class="result-card" data-filename="${fileName}">
+                            <div class="result-header">
+                                <div class="d-flex align-items-center gap-2 overflow-hidden">
+                                    <button class="btn btn-sm btn-outline-secondary border-0 toggle-btn"><i class="bi bi-chevron-up"></i></button>
+                                    <a href="${fileUrl}" target="_blank" class="text-info text-decoration-none fw-bold text-truncate" style="max-width: 250px;">
+                                        ${fileName} <i class="bi bi-box-arrow-up-right small ms-1"></i>
+                                    </a>
+                                </div>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-glass text-white copy-json"><i class="bi bi-clipboard"></i></button>
+                                    <button class="btn btn-sm btn-glass text-white download-json"><i class="bi bi-download"></i></button>
+                                </div>
+                            </div>
+                            <div class="card-body p-4 collapse show"></div>
+                        </div>
+                    `);
+                    
+                    const $body = $card.find('.card-body');
+                    $body.append(jsonToInputs(data));
+                    
+                    $card.find('.toggle-btn').click(function() {
+                        const icon = $(this).find('i');
+                        $body.slideToggle(200, () => icon.toggleClass('bi-chevron-up bi-chevron-down'));
+                    });
+
+                    const getCardData = () => {
+                        let root = {};
+                        $body.find('.json-field').each(function() {
+                            const $el = $(this);
+                            const path = $el.data('path'); 
+                            const type = $el.data('type');
+                            
+                            let val = $el.val();
+                            if (type === 'boolean') val = $el.is(':checked');
+                            if (type === 'number') val = (val === '') ? null : parseFloat(val);
+                            
+                            const conf = $el.data('conf');
+                            if (conf !== undefined) val = [val, String(conf)];
+                            
+                            const parts = path.split(/(?:\.|\[|\])+/).filter(p => p !== "");
+                            let curr = root;
+                            for (let i = 0; i < parts.length - 1; i++) {
+                                let key = parts[i];
+                                let nextKey = parts[i+1];
+                                if (!curr[key]) curr[key] = isNaN(nextKey) ? {} : [];
+                                curr = curr[key];
+                            }
+                            curr[parts[parts.length-1]] = val;
+                        });
+                        return root;
+                    };
+                    $card.data('getData', getCardData);
+
+                    $card.find('.copy-json').click(() => {
+                        navigator.clipboard.writeText(JSON.stringify(getCardData(), null, 2));
+                        const btn = $card.find('.copy-json i').removeClass('bi-clipboard').addClass('bi-check2');
+                        setTimeout(() => btn.removeClass('bi-check2').addClass('bi-clipboard'), 1000);
+                    });
+
+                    $card.find('.download-json').click(() => {
+                        const blob = new Blob([JSON.stringify(getCardData(), null, 2)], {type: "application/json"});
+                        const link = document.createElement("a");
+                        link.href = URL.createObjectURL(blob);
+                        link.download = fileName.split('.')[0] + ".json";
+                        link.click();
+                    });
+
+                    $cont.append($card);
+                });
+            }
+
+            function formatKey(str) {
+                if (!str) return "";
+                return str.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            }
+
+            function jsonToInputs(obj, path = "") {
+                const $wrapper = $('<div class="ps-3"></div>');
+                
+                if (Array.isArray(obj)) {
+                    obj.forEach((item, i) => {
+                        const $group = $(`<div class="mb-3 p-3 rounded" style="background: rgba(255,255,255,0.02);"><div class="text-secondary small mb-2 fw-bold text-uppercase">Item ${i+1}</div></div>`);
+                        $group.append(jsonToInputs(item, `${path}[${i}]`));
+                        $wrapper.append($group);
+                    });
+                    return $wrapper;
+                }
+                
+                if (typeof obj === 'object' && obj !== null) {
+                    if (Object.keys(obj).length === 1 && obj.value !== undefined) {
+                         return createFieldInput(path.split('.').pop(), obj.value, path);
+                    }
+                    Object.entries(obj).forEach(([key, val]) => {
+                        const currentPath = path ? `${path}.${key}` : key;
+                        if (val && typeof val === 'object' && !Array.isArray(val) && val.hasOwnProperty('value')) {
+                            let rawVal = val.value;
+                            let confVal = undefined;
+                            if (Array.isArray(rawVal) && rawVal.length === 2) { confVal = rawVal[1]; rawVal = rawVal[0]; }
+                            $wrapper.append(createFieldInput(key, rawVal, currentPath, confVal));
+                        } 
+                        else if (typeof val === 'object' && val !== null) {
+                            $wrapper.append(`<div class="text-info small fw-bold mt-2 mb-1 text-uppercase">${formatKey(key)}</div>`);
+                            $wrapper.append(jsonToInputs(val, currentPath));
+                        } else {
+                            $wrapper.append(createFieldInput(key, val, currentPath));
+                        }
+                    });
+                    return $wrapper;
+                }
+                return $wrapper;
+            }
+
+            function createFieldInput(label, val, path, conf) {
+                const displayLabel = formatKey(label);
+
+                const $row = $('<div class="mb-3 row align-items-center g-2"></div>');
+                const type = (typeof val === 'number') ? 'number' : (typeof val === 'boolean') ? 'checkbox' : 'text';
+                
+                $row.append(`<div class="col-12 col-md-4 text-white small text-truncate" title="${displayLabel}">${displayLabel}</div>`);
+                
+                const $colInput = $('<div class="col"></div>');
+                let $input;
+                if (type === 'checkbox') {
+                    $input = $(`<div class="form-check form-switch"><input class="form-check-input json-field" type="checkbox" ${val ? 'checked' : ''}></div>`);
+                    $input.find('input').data({path, type: 'boolean', conf});
+                } else {
+                    $input = $(`<input type="${type}" class="form-control form-control-dark json-field" value="${val === null ? '' : val}">`);
+                    $input.data({path, type: (val===null?'null':type), conf});
+                }
+                $colInput.append($input);
+                $row.append($colInput);
+
+                // CHANGED: Always append the confidence score if it exists.
+                // We add the class 'conf-score' which is hidden by default in CSS.
+                // It is only revealed when the parent container has the class 'show-scores'.
+                if (conf !== undefined) {
+                    const cNum = parseFloat(conf);
+                    if (!isNaN(cNum) && cNum > 0) {
+                        const color = cNum > 0.9 ? 'text-success' : (cNum > 0.7 ? 'text-warning' : 'text-danger');
+                        $row.append(`<div class="col-auto conf-score"><span class="small fw-bold ${color}">${Math.round(cNum*100)}%</span></div>`);
+                    }
+                }
+                return $row;
+            }
+
+            $("#expandAll").click(() => $(".result-card .card-body").slideDown());
+            $("#collapseAll").click(() => $(".result-card .card-body").slideUp());
+            
+            $("#downloadAll").click(function() {
+                const masterData = {};
+                $(".result-card").each(function() {
+                    const fname = $(this).data('filename');
+                    if ($(this).data('getData')) {
+                        masterData[fname] = $(this).data('getData')();
+                    }
+                });
+                
+                const blob = new Blob([JSON.stringify(masterData, null, 2)], {type: "application/json"});
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = "all_invoices_data.json";
+                link.click();
+            });
+
+            function resetUI() {
+                $("#uploadButton").prop("disabled", false).removeClass('opacity-50');
+            }
         });
     </script>
 </body>

@@ -464,4 +464,4 @@ def reset_history():
     return clear()
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', debug=False, port=8000)
+    app.run(host='127.0.0.1', debug=True, port=8000)
